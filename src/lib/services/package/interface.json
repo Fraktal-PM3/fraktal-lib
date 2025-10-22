@@ -1,0 +1,315 @@
+{
+    "namespace": "default",
+    "name": "pm3package",
+    "description": "FFI for PM3 PackageContract",
+    "version": "1.1",
+    "methods": [
+        {
+            "name": "CreatePackage",
+            "pathname": "",
+            "description": "Create a package. Transient key 'pii' must contain PrivatePackage JSON.",
+            "params": [
+                {
+                    "name": "packageID",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "returns": []
+        },
+        {
+            "name": "ReadPackage",
+            "pathname": "",
+            "description": "Read a package by ID",
+            "params": [
+                {
+                    "name": "id",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "returns": [
+                {
+                    "name": "",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "UpdatePackageStatus",
+            "pathname": "",
+            "description": "Update status (only owner; SUCCEEDED requires role pm3)",
+            "params": [
+                {
+                    "name": "id",
+                    "schema": {
+                        "type": "string"
+                    }
+                },
+                {
+                    "name": "status",
+                    "schema": {
+                        "type": "string",
+                        "enum": [
+                            "pending",
+                            "ready_for_pickup",
+                            "picked_up",
+                            "in_transit",
+                            "delivered",
+                            "succeeded",
+                            "failed"
+                        ]
+                    }
+                }
+            ],
+            "returns": []
+        },
+        {
+            "name": "DeletePackage",
+            "pathname": "",
+            "description": "Delete a package (PM3 anytime, or ombud while PENDING)",
+            "params": [
+                {
+                    "name": "id",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "returns": []
+        },
+        {
+            "name": "PackageExists",
+            "pathname": "",
+            "description": "Check if package exists",
+            "params": [
+                {
+                    "name": "id",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "returns": [
+                {
+                    "name": "",
+                    "schema": {
+                        "type": "boolean"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "ProposeTransfer",
+            "pathname": "",
+            "description": "Propose a transfer (owner only). Transient keys: 'terms' (JSON), 'pdcCollection' (string).",
+            "params": [
+                {
+                    "name": "pkgId",
+                    "schema": {
+                        "type": "string"
+                    }
+                },
+                {
+                    "name": "proposalId",
+                    "schema": {
+                        "type": "string"
+                    }
+                },
+                {
+                    "name": "toMSP",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "returns": []
+        },
+        {
+            "name": "AcceptTransfer",
+            "pathname": "",
+            "description": "Accept a transfer (toMSP only). Transient key: 'pdcCollection' (string).",
+            "params": [
+                {
+                    "name": "pkgId",
+                    "schema": {
+                        "type": "string"
+                    }
+                },
+                {
+                    "name": "proposalId",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "returns": []
+        },
+        {
+            "name": "ExecuteTransfer",
+            "pathname": "",
+            "description": "Execute a transfer (fromMSP only; typically with both-org endorsement).",
+            "params": [
+                {
+                    "name": "pkgId",
+                    "schema": {
+                        "type": "string"
+                    }
+                },
+                {
+                    "name": "proposalId",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "returns": []
+        }
+    ],
+    "events": [
+        {
+            "name": "CreatePackage",
+            "description": "Emitted on creation; payload is PublicPackage",
+            "details": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "ownerOrgMSP": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "pending",
+                            "ready_for_pickup",
+                            "picked_up",
+                            "in_transit",
+                            "delivered",
+                            "succeeded",
+                            "failed"
+                        ]
+                    },
+                    "dataHash": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        {
+            "name": "StatusUpdated",
+            "description": "Emitted when status changes",
+            "details": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "pending",
+                            "ready_for_pickup",
+                            "picked_up",
+                            "in_transit",
+                            "delivered",
+                            "succeeded",
+                            "failed"
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            "name": "DeletePackage",
+            "description": "Emitted on delete",
+            "details": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        {
+            "name": "TransferProposed",
+            "description": "Emitted when a transfer is proposed; payload is the proposal stub",
+            "details": {
+                "type": "object",
+                "properties": {
+                    "proposalId": {
+                        "type": "string"
+                    },
+                    "pkgId": {
+                        "type": "string"
+                    },
+                    "fromMSP": {
+                        "type": "string"
+                    },
+                    "toMSP": {
+                        "type": "string"
+                    },
+                    "termsHash": {
+                        "type": "string"
+                    },
+                    "createdISO": {
+                        "type": "string"
+                    },
+                    "expiryISO": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "proposed",
+                            "accepted",
+                            "executed",
+                            "cancelled",
+                            "rejected",
+                            "expired"
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            "name": "TransferAccepted",
+            "description": "Emitted when a transfer is accepted",
+            "details": {
+                "type": "object",
+                "properties": {
+                    "pkgId": {
+                        "type": "string"
+                    },
+                    "proposalId": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        {
+            "name": "TransferExecuted",
+            "description": "Emitted when a transfer is executed",
+            "details": {
+                "type": "object",
+                "properties": {
+                    "pkgId": {
+                        "type": "string"
+                    },
+                    "proposalId": {
+                        "type": "string"
+                    },
+                    "newOwner": {
+                        "type": "string"
+                    }
+                }
+            }
+        }
+    ]
+}

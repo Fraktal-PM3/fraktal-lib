@@ -2,15 +2,15 @@
     "namespace": "default",
     "name": "pm3package",
     "description": "FFI for PM3 PackageContract",
-    "version": "1.1",
+    "version": "1.0",
     "methods": [
         {
             "name": "CreatePackage",
             "pathname": "",
-            "description": "Create a package. Transient key 'pii' must contain PrivatePackage JSON.",
+            "description": "Create a package. Transient keys: 'pii' (JSON of PackagePII), 'packageDetails' (JSON of packageDetails).",
             "params": [
                 {
-                    "name": "packageID",
+                    "name": "externalId",
                     "schema": {
                         "type": "string"
                     }
@@ -19,12 +19,33 @@
             "returns": []
         },
         {
-            "name": "ReadPackage",
+            "name": "ReadBlockchainPackage",
             "pathname": "",
-            "description": "Read a package by ID",
+            "description": "Read the public blockchain package data by external ID",
             "params": [
                 {
-                    "name": "id",
+                    "name": "externalId",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "returns": [
+                {
+                    "name": "",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "ReadPackageDetailsAndPII",
+            "pathname": "",
+            "description": "Read the private package details and PII by external ID (caller must be in authorized org)",
+            "params": [
+                {
+                    "name": "externalId",
                     "schema": {
                         "type": "string"
                     }
@@ -45,7 +66,7 @@
             "description": "Update status (only owner; SUCCEEDED requires role pm3)",
             "params": [
                 {
-                    "name": "id",
+                    "name": "externalId",
                     "schema": {
                         "type": "string"
                     }
@@ -74,7 +95,7 @@
             "description": "Delete a package (PM3 anytime, or ombud while PENDING)",
             "params": [
                 {
-                    "name": "id",
+                    "name": "externalId",
                     "schema": {
                         "type": "string"
                     }
@@ -88,7 +109,7 @@
             "description": "Check if package exists",
             "params": [
                 {
-                    "name": "id",
+                    "name": "externalId",
                     "schema": {
                         "type": "string"
                     }
@@ -102,85 +123,16 @@
                     }
                 }
             ]
-        },
-        {
-            "name": "ProposeTransfer",
-            "pathname": "",
-            "description": "Propose a transfer (owner only). Transient keys: 'terms' (JSON), 'pdcCollection' (string).",
-            "params": [
-                {
-                    "name": "pkgId",
-                    "schema": {
-                        "type": "string"
-                    }
-                },
-                {
-                    "name": "proposalId",
-                    "schema": {
-                        "type": "string"
-                    }
-                },
-                {
-                    "name": "toMSP",
-                    "schema": {
-                        "type": "string"
-                    }
-                }
-            ],
-            "returns": []
-        },
-        {
-            "name": "AcceptTransfer",
-            "pathname": "",
-            "description": "Accept a transfer (toMSP only). Transient key: 'pdcCollection' (string).",
-            "params": [
-                {
-                    "name": "pkgId",
-                    "schema": {
-                        "type": "string"
-                    }
-                },
-                {
-                    "name": "proposalId",
-                    "schema": {
-                        "type": "string"
-                    }
-                }
-            ],
-            "returns": []
-        },
-        {
-            "name": "ExecuteTransfer",
-            "pathname": "",
-            "description": "Execute a transfer (fromMSP only; typically with both-org endorsement).",
-            "params": [
-                {
-                    "name": "pkgId",
-                    "schema": {
-                        "type": "string"
-                    }
-                },
-                {
-                    "name": "proposalId",
-                    "schema": {
-                        "type": "string"
-                    }
-                }
-            ],
-            "returns": []
         }
     ],
     "events": [
         {
             "name": "CreatePackage",
-            "description": "Emitted on creation; payload is PublicPackage",
+            "description": "Emitted on package creation",
             "details": {
                 "type": "object",
                 "properties": {
                     "id": {
-                        "type": "string"
-                    },
-                    "ownerOrgMSP": {
                         "type": "string"
                     },
                     "status": {
@@ -194,9 +146,6 @@
                             "succeeded",
                             "failed"
                         ]
-                    },
-                    "dataHash": {
-                        "type": "string"
                     }
                 }
             }
@@ -232,80 +181,6 @@
                 "type": "object",
                 "properties": {
                     "id": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        {
-            "name": "TransferProposed",
-            "description": "Emitted when a transfer is proposed; payload is the proposal stub",
-            "details": {
-                "type": "object",
-                "properties": {
-                    "proposalId": {
-                        "type": "string"
-                    },
-                    "pkgId": {
-                        "type": "string"
-                    },
-                    "fromMSP": {
-                        "type": "string"
-                    },
-                    "toMSP": {
-                        "type": "string"
-                    },
-                    "termsHash": {
-                        "type": "string"
-                    },
-                    "createdISO": {
-                        "type": "string"
-                    },
-                    "expiryISO": {
-                        "type": "string"
-                    },
-                    "status": {
-                        "type": "string",
-                        "enum": [
-                            "proposed",
-                            "accepted",
-                            "executed",
-                            "cancelled",
-                            "rejected",
-                            "expired"
-                        ]
-                    }
-                }
-            }
-        },
-        {
-            "name": "TransferAccepted",
-            "description": "Emitted when a transfer is accepted",
-            "details": {
-                "type": "object",
-                "properties": {
-                    "pkgId": {
-                        "type": "string"
-                    },
-                    "proposalId": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        {
-            "name": "TransferExecuted",
-            "description": "Emitted when a transfer is executed",
-            "details": {
-                "type": "object",
-                "properties": {
-                    "pkgId": {
-                        "type": "string"
-                    },
-                    "proposalId": {
-                        "type": "string"
-                    },
-                    "newOwner": {
                         "type": "string"
                     }
                 }

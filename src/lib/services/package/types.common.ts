@@ -37,27 +37,28 @@ export enum TransferStatus {
     EXPIRED = "expired",
 }
 
+export type PackagePII = { [key: string]: any }
+
+export type PrivateTransferTerms = {
+    price: number
+}
+
+export type TransferTerms = {
+    externalPackageId: string
+    fromMSP: string
+    toMSP: string
+    createdISO: string
+    expiryISO: string | null | undefined
+}
+
 export type Transfer = {
-    terms: {
-        proposalId: string
-        pkgId: string
-        fromMSP: string
-        toMSP: string
-        createdISO: string
-        expiryISO: string | null | undefined
-    }
+    terms: TransferTerms
     status: TransferStatus
-    hash: string
+    transferTermsHash: string
 }
 
-export type PublicPackage = {
-    id: string,
-    status: Status,
-    ownerOrgMSP: string,
-    dataHash: string,
-}
 
-export type PrivatePackage = {
+export type PackageDetails = {
     pickupLocation: Location
     dropLocation: Location
     address: string
@@ -66,4 +67,13 @@ export type PrivatePackage = {
     urgency: Urgency
 }
 
-export type PrivatePackageWithId = PrivatePackage & { id: string }
+export type BlockchainPackage = {
+    externalId: string
+    ownerOrgMSP: string
+    status: Status
+    packageDetailsHash: string
+}
+
+
+
+export type PackageDetailsWithId = PackageDetails & { id: string }

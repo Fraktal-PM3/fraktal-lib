@@ -1,19 +1,15 @@
 import { PRIVATE_PACKAGE_DT_NAME, PRIVATE_PACKAGE_DT_VERSION, privatePackageDatatypePayload } from "../../datatypes/package"
-import { PrivatePackage, PrivatePackageWithId, Status } from "./types.common"
-import FabconnectService from "../fabconnect/FabconnectService"
-import { TxResponse } from "../fabconnect/types.common"
+import { PrivatePackage, PrivatePackageWithId, PublicPackage, Status } from "./types.common"
 import contractInterface from "./interface.json"
 import FireFly from "@hyperledger/firefly-sdk"
 
 export default class PackageService {
 
     private ff: FireFly
-    private fb: FabconnectService
     private initalized: boolean = false
 
-    constructor(ff: FireFly, fb: FabconnectService) {
+    constructor(ff: FireFly) {
         this.ff = ff
-        this.fb = fb
     }
 
     public initalize = async () => {
@@ -30,13 +26,13 @@ export default class PackageService {
     public initialized = () => this.initalized
 
     private getContractInterface = async () => {
-        const interfaces = await this.ff.getContractInterfaces({ name: "pm3package" })
+        const interfaces = await this.ff.getContractInterfaces({ name: contractInterface.name })
         return interfaces[0] || null
     }
 
     private createContractInterface = async () => {
 
-        const exists = await this.ff.getContractInterfaces({ name: "pm3package" })
+        const exists = await this.ff.getContractInterfaces({ name: contractInterface.name })
 
         if (exists.length) return
 
@@ -50,7 +46,7 @@ export default class PackageService {
     }
 
     private getContractAPI = async () => {
-        const apis = await this.ff.getContractAPIs({ name: "pm3package" })
+        const apis = await this.ff.getContractAPIs({ name: contractInterface.name })
         return apis[0] || null
     }
 
@@ -63,8 +59,8 @@ export default class PackageService {
 
         this.ff.createContractAPI({
             interface: { id: contractInterface.id },
-            location: { channel: "pm3", chaincode: "pm3package" },
-            name: "pm3package",
+            location: { channel: "pm3", chaincode: contractInterface.name },
+            name: contractInterface.name,
         })
     }
 
@@ -129,8 +125,7 @@ export default class PackageService {
     /* Chaincode Queries */
 
     public createPackage = async (packageID: string, pii: PrivatePackage) => {
-
-        const res = await this.ff.invokeContractAPI("pm3package", "CreatePackage", 
+        const res = await this.ff.invokeContractAPI(contractInterface.name, "CreatePackage", 
             {
                 input: {
                     packageID
@@ -144,8 +139,30 @@ export default class PackageService {
                 confirm: true 
             }
         )
+        return res
+    }
+
+    public updatePackageStatus = async (packageID: string, status: Status) => {
+        const res = await this.ff.invokeContractAPI(contractInterface.name, "UpdatePackageStatus", {
+            input: { id: packageID, status }
+        }, { confirm: true, publish: true })
 
         return res
+    }
 
+    public readPackage = async (packageID: string): Promise<PublicPackage> => {
+        const res = await this.ff.queryContractAPI(contractInterface.name, "ReadPackage", {
+            input: { id: packageID }
+        }, { confirm: true, publish: true })
+
+        return res as PublicPackage
+    }
+
+    public deletePackage = async (packageID: string) => {
+        const res = await this.ff.invokeContractAPI(contractInterface.name, "DeletePackage", {
+            input: { id: packageID }
+        }, { confirm: true, publish: true })
+
+        return res
     }
 }

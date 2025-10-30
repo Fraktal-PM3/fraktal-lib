@@ -58,7 +58,7 @@ export default class FabconnectService {
         return res.json()
     }
 
-    public reendrollIdentity = async (username: string, attributes?: Record<string, boolean>) => {
+    public reenrollIdentity = async (username: string, attributes?: Record<string, boolean>) => {
         const url = `${this.address}/identities/${encodeURIComponent(username)}/reenroll`
         const res = await fetch(url,
             {

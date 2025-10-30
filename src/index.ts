@@ -1,7 +1,8 @@
-import FireFly, { FireFlyOptionsInput } from "@hyperledger/firefly-sdk"
 import FabconnectService from "./lib/services/fabconnect/FabconnectService"
-import { Urgency } from "./lib/services/package/types.common"
+import FireFly, { FireFlyOptionsInput } from "@hyperledger/firefly-sdk"
 import PackageService from "./lib/services/package/PackageService"
+import { Status, Urgency } from "./lib/services/package/types.common"
+import { randomUUID } from "crypto"
 
 const main = async () => {
 
@@ -16,11 +17,11 @@ const main = async () => {
     const fbService = new FabconnectService("http://localhost:5102")
     const fbStatus = await fbService.getChainInfo("pm3", "admin")
 
-    const packageService = new PackageService(ffService, fbService) 
+    const packageService = new PackageService(ffService) 
     await packageService.initalize()
 
     const identities = await fbService.getIdentities()
-    console.log(identities)
+    // console.log(identities)
 
     fbService.modifyIdentity("admin", { 
         attributes: {
@@ -28,9 +29,9 @@ const main = async () => {
         }
     })
 
-    fbService.reendrollIdentity("admin", { role: true })
+    fbService.reenrollIdentity("admin", { role: true })
 
-    const packageID = "test-package-007"
+    const packageID = randomUUID()
     const pii = {        
         pickupLocation: {
             name: "Warehouse A",
@@ -55,8 +56,22 @@ const main = async () => {
     }
 
 
-    const res = await packageService.createPackage(packageID, pii)
-    console.log(res)
+    const res1 = await packageService.createPackage(packageID, pii)
+    console.log(res1)
+
+    const res2 = await packageService.readPackage(packageID)
+    console.log(res2)
+
+    const res3 = await packageService.updatePackageStatus(packageID, Status.READY_FOR_PICKUP)
+    console.log(res3)
+
+    const res4 = await packageService.readPackage(packageID)
+    console.log(res4)
+
+    // expect error since package is not in a deletable state
+    const res5 = await packageService.deletePackage(packageID)
+    console.log(res5)
+
 }
 
 main()

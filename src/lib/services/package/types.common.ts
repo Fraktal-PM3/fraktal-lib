@@ -50,6 +50,13 @@ export type Transfer = {
     hash: string
 }
 
+export type PublicPackage = {
+    id: string,
+    status: Status,
+    ownerOrgMSP: string,
+    dataHash: string,
+}
+
 export type PrivatePackage = {
     pickupLocation: Location
     dropLocation: Location

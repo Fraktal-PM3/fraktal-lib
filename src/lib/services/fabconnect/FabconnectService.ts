@@ -43,7 +43,7 @@ export default class FabconnectService {
         const url = `${this.address}/identities/${encodeURIComponent(username)}/enroll`
         const res = await fetch(url,
             {
-                method: "POST",
+                method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
                     accept: "application/json",
@@ -53,6 +53,26 @@ export default class FabconnectService {
         )
         if (!res.ok) {
             throw new Error(`Failed to enroll identity: ${res.status} ${res.statusText}`)
+        }
+
+        return res.json()
+    }
+
+    public reendrollIdentity = async (username: string, attributes?: Record<string, boolean>) => {
+        const url = `${this.address}/identities/${encodeURIComponent(username)}/reenroll`
+        const res = await fetch(url,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    accept: "application/json",
+                },
+                body: JSON.stringify({ attributes: attributes?.length ? attributes : {} }),
+            },
+        )
+
+        if (!res.ok) {
+            throw new Error(`Failed to reenroll identity: ${res.status} ${res.statusText}`)
         }
 
         return res.json()

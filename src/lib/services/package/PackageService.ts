@@ -1,8 +1,9 @@
 import { PRIVATE_PACKAGE_DT_NAME, PRIVATE_PACKAGE_DT_VERSION, privatePackageDatatypePayload } from "../../datatypes/package"
 import { PrivatePackage, PrivatePackageWithId, Status } from "./types.common"
 import FabconnectService from "../fabconnect/FabconnectService"
-import FireFly from "@hyperledger/firefly-sdk"
 import { TxResponse } from "../fabconnect/types.common"
+import contractInterface from "./interface.json"
+import FireFly from "@hyperledger/firefly-sdk"
 
 export default class PackageService {
 
@@ -20,10 +21,53 @@ export default class PackageService {
             await this.createDataType()
         }
 
+        await this.createContractInterface()
+        await this.createContractAPI()
+
         this.initalized = true
     }
 
     public initialized = () => this.initalized
+
+    private getContractInterface = async () => {
+        const interfaces = await this.ff.getContractInterfaces({ name: "pm3package" })
+        return interfaces[0] || null
+    }
+
+    private createContractInterface = async () => {
+
+        const exists = await this.ff.getContractInterfaces({ name: "pm3package" })
+
+        if (exists.length) return
+
+        await this.ff.createContractInterface(
+            contractInterface, 
+            { 
+                publish: true, 
+                confirm: true 
+            }
+        )
+    }
+
+    private getContractAPI = async () => {
+        const apis = await this.ff.getContractAPIs({ name: "pm3package" })
+        return apis[0] || null
+    }
+
+    private createContractAPI = async () => {
+        
+        const contractInterface = await this.getContractInterface()
+        const contractAPI = await this.getContractAPI()
+
+        if (!contractInterface || contractAPI) return
+
+        this.ff.createContractAPI({
+            interface: { id: contractInterface.id },
+            location: { channel: "pm3", chaincode: "pm3package" },
+            name: "pm3package",
+        })
+    }
+
 
     /* Define Package Datatype */
     private createDataType = async () => {
@@ -84,72 +128,24 @@ export default class PackageService {
 
     /* Chaincode Queries */
 
-    public createPackage = async (packageID: string, pii: PrivatePackage, signer: string, channel: string): Promise<TxResponse> => {
-        const uploadRes = await this.uploadPackage({ ...pii, id: packageID })
-        
-        if (!uploadRes.created) {
-            throw new Error("Failed to upload package data to FireFly")
-        }
-        
-        const transientMap = new Map<string, string>()
-        transientMap.set("pii", JSON.stringify(pii))
-        
-        // Contract: CreatePackage(ctx, id: string)
-        const res = await this.fb.submitTx({
-            headers: {
-                type: "SendTransaction",
-                signer,
-                channel,
-                chaincode: "pm3package"
-            },
-            func: "CreatePackage",
-            args: [packageID],
-            transientMap: Object.fromEntries(transientMap),
-            init: false
-        })
+    public createPackage = async (packageID: string, pii: PrivatePackage) => {
+
+        const res = await this.ff.invokeContractAPI("pm3package", "CreatePackage", 
+            {
+                input: {
+                    packageID
+                },
+                options: {
+                    transientMap: { pii: JSON.stringify(pii) }
+                }
+            }, 
+            { 
+                publish: true, 
+                confirm: true 
+            }
+        )
 
         return res
-    }
 
-    public readPackage = async (packageID: string, signer: string, channel: string) => {
-        // Contract: ReadPackage(ctx, id: string) => Package
-        const res = await this.fb.query({
-            headers: {
-                signer,
-                channel,
-                chaincode: "pm3package",
-            },
-            func: "ReadPackage",
-            args: [packageID],
-            strongread: true
-        })
-
-        return res.result
-    }
-
-    public updatePackageStatus = async (id: string, status: Status, signer: string, channel: string): Promise<TxResponse> => {
-        // Contract: UpdatePackageStatus(ctx, id: string, status: Status)
-        const res = await this.fb.submitTx({
-            headers: { type: "SendTransaction", signer, channel, chaincode: "pm3package" },
-            func: "UpdatePackageStatus",
-            args: [id, status],
-            transientMap: {},
-            init: false
-        })
-
-        return res
-    }
-
-    public deletePackage = async (packageID: string, signer: string, channel: string): Promise<TxResponse> => {
-        // Contract: DeletePackage(ctx, id: string)
-        const res = await this.fb.submitTx({
-            headers: { type: "SendTransaction", signer, channel, chaincode: "pm3package" },
-            func: "DeletePackage",
-            args: [packageID],
-            transientMap: {},
-            init: false
-        })
-
-        return res
     }
 }

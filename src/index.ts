@@ -19,13 +19,18 @@ const main = async () => {
     const packageService = new PackageService(ffService, fbService) 
     await packageService.initalize()
 
-    // Set admin as signing identity
-    // const res1 = await fbService.enrollIdentity("admin", "adminpw")
-    // const res2 = await fbService.modifyIdentity("admin", { attributes: { role: "ombud" } })
-
     const identities = await fbService.getIdentities()
-    
-    const packageID = "test-package-006"
+    console.log(identities)
+
+    fbService.modifyIdentity("admin", { 
+        attributes: {
+            role: "ombud" 
+        }
+    })
+
+    fbService.reendrollIdentity("admin", { role: true })
+
+    const packageID = "test-package-007"
     const pii = {        
         pickupLocation: {
             name: "Warehouse A",
@@ -49,12 +54,9 @@ const main = async () => {
         urgency: Urgency.NONE
     }
 
-    // const data = await packageService.createPackage(packageID, pii, "admin", "pm3")
-    // console.log(data)
 
-    // const retrievedPackage = await packageService.readPackage(packageID, "admin", "pm3")
-    // console.log(retrievedPackage)
-
+    const res = await packageService.createPackage(packageID, pii)
+    console.log(res)
 }
 
 main()

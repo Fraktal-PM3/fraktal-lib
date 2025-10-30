@@ -39,7 +39,7 @@ export default class FabconnectService {
         return res.json()
     }
 
-    public enrollIdentity = async (username: string, secret: string, attributes?: Record<string, string>) => {
+    public enrollIdentity = async (username: string, secret: string, attributes: { [key: string]: any }) => {
         const url = `${this.address}/identities/${encodeURIComponent(username)}/enroll`
         const res = await fetch(url,
             {
@@ -48,7 +48,7 @@ export default class FabconnectService {
                     "Content-Type": "application/json",
                     accept: "application/json",
                 },
-                body: JSON.stringify({ secret, attributes: attributes?.length ? attributes : {} }),
+                body: JSON.stringify({ secret, attributes }),
             },
         )
         if (!res.ok) {
@@ -58,16 +58,16 @@ export default class FabconnectService {
         return res.json()
     }
 
-    public reenrollIdentity = async (username: string, attributes?: Record<string, boolean>) => {
+    public reenrollIdentity = async (username: string, attributes: { [key: string]: any }) => {
         const url = `${this.address}/identities/${encodeURIComponent(username)}/reenroll`
         const res = await fetch(url,
             {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    accept: "application/json",
+                    "accept": "application/json",
                 },
-                body: JSON.stringify({ attributes: attributes?.length ? attributes : {} }),
+                body: JSON.stringify({ attributes }),
             },
         )
 
@@ -80,13 +80,13 @@ export default class FabconnectService {
 
     public modifyIdentity = async (username: string, payload: ModfiyBody) => {
         const res = await fetch(`${this.address}/identities/${encodeURIComponent(username)}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json", accept: "application/json" },
-          body: JSON.stringify(payload),
+            method: "PUT",
+            headers: { "Content-Type": "application/json", accept: "application/json" },
+            body: JSON.stringify(payload),
         })
 
         if (!res.ok) {
-          throw new Error(`Failed to modify identity: ${res.status} ${res.statusText}`)
+            throw new Error(`Failed to modify identity: ${res.status} ${res.statusText}`)
         }
 
         return res.json()

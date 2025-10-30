@@ -21,15 +21,18 @@ const main = async () => {
     await packageService.initalize()
 
     const identities = await fbService.getIdentities()
-    // console.log(identities)
+    console.log(identities)
 
-    fbService.modifyIdentity("admin", { 
+    await fbService.modifyIdentity("org_fcbdaf", { 
+        type: "client",
+        name: "string",
+        maxEnrollments: 0,
         attributes: {
             role: "ombud" 
         }
     })
 
-    fbService.reenrollIdentity("admin", { role: true })
+    await fbService.reenrollIdentity("org_fcbdaf", { role: true })
 
     const packageID = randomUUID()
     const pii = {        
@@ -69,8 +72,8 @@ const main = async () => {
     console.log(res4)
 
     // expect error since package is not in a deletable state
-    const res5 = await packageService.deletePackage(packageID)
-    console.log(res5)
+    // const res5 = await packageService.deletePackage(packageID)
+    // console.log(res5)
 
 }
 

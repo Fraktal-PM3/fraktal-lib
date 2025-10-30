@@ -19,11 +19,34 @@ export default class PackageService {
 
         await this.createContractInterface()
         await this.createContractAPI()
+        await this.registerListner()
 
         this.initalized = true
     }
 
+    
     public initialized = () => this.initalized
+
+    private registerListner = async () => {
+        const api = await this.getContractAPI()
+        if (!api) return
+
+        contractInterface.events.forEach(async (event) => {
+            const existing = await this.ff.getContractAPIListeners(contractInterface.name, event.name)
+            if (existing.length) return
+            await this.ff.createContractAPIListener(contractInterface.name, event.name, 
+                {
+                    event: { name: event.name },
+                    name: `listen_${event.name}_events`,
+                    topic: `ff_contractapi_${api.id}_events`,
+                },
+                {
+                    publish: true,
+                    confirm: true
+                }
+            )
+        })
+    }
 
     private getContractInterface = async () => {
         const interfaces = await this.ff.getContractInterfaces({ name: contractInterface.name })

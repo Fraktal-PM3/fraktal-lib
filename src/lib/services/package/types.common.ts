@@ -5,7 +5,6 @@ export type Size = {
 }
 
 export type Location = {
-    name: string
     address: string
     lat: number
     lng: number
@@ -57,7 +56,6 @@ export type Transfer = {
     transferTermsHash: string
 }
 
-
 export type PackageDetails = {
     pickupLocation: Location
     dropLocation: Location
@@ -74,6 +72,5 @@ export type BlockchainPackage = {
     packageDetailsHash: string
 }
 
-
-
 export type PackageDetailsWithId = PackageDetails & { id: string }
+

@@ -1,10 +1,15 @@
 import FireFly from "@hyperledger/firefly-sdk"
 import { privatePackageDatatypePayload } from "../../datatypes/package"
 import contractInterface from "./interface.json"
-import { BlockchainPackage, PackageDetails, PackagePII, Status } from "./types.common"
+import {
+    BlockchainPackage,
+    PackageDetails,
+    PackagePII,
+    Status,
+} from "./types.common"
+import crypto from "crypto"
 
 export default class PackageService {
-
     private ff: FireFly
     private initalized: boolean = false
 
@@ -24,7 +29,6 @@ export default class PackageService {
         this.initalized = true
     }
 
-
     public initialized = () => this.initalized
 
     private registerListner = async () => {
@@ -32,9 +36,14 @@ export default class PackageService {
         if (!api) return
 
         contractInterface.events.forEach(async (event) => {
-            const existing = await this.ff.getContractAPIListeners(contractInterface.name, event.name)
+            const existing = await this.ff.getContractAPIListeners(
+                contractInterface.name,
+                event.name,
+            )
             if (existing.length) return
-            await this.ff.createContractAPIListener(contractInterface.name, event.name,
+            await this.ff.createContractAPIListener(
+                contractInterface.name,
+                event.name,
                 {
                     event: { name: event.name },
                     name: `listen_${event.name}_events`,
@@ -42,39 +51,40 @@ export default class PackageService {
                 },
                 {
                     publish: true,
-                    confirm: true
-                }
+                    confirm: true,
+                },
             )
         })
     }
 
     private getContractInterface = async () => {
-        const interfaces = await this.ff.getContractInterfaces({ name: contractInterface.name })
+        const interfaces = await this.ff.getContractInterfaces({
+            name: contractInterface.name,
+        })
         return interfaces[0] || null
     }
 
     private createContractInterface = async () => {
-
-        const exists = await this.ff.getContractInterfaces({ name: contractInterface.name })
+        const exists = await this.ff.getContractInterfaces({
+            name: contractInterface.name,
+        })
 
         if (exists.length) return
 
-        await this.ff.createContractInterface(
-            contractInterface,
-            {
-                publish: true,
-                confirm: true
-            }
-        )
+        await this.ff.createContractInterface(contractInterface, {
+            publish: true,
+            confirm: true,
+        })
     }
 
     private getContractAPI = async () => {
-        const apis = await this.ff.getContractAPIs({ name: contractInterface.name })
+        const apis = await this.ff.getContractAPIs({
+            name: contractInterface.name,
+        })
         return apis[0] || null
     }
 
     private createContractAPI = async () => {
-
         const contractInterface = await this.getContractInterface()
         const contractAPI = await this.getContractAPI()
 
@@ -82,22 +92,18 @@ export default class PackageService {
 
         this.ff.createContractAPI({
             interface: { id: contractInterface.id },
-            location: { channel: "firefly", chaincode: contractInterface.name },
+            location: { channel: "pm3", chaincode: contractInterface.name },
             name: contractInterface.name,
         })
     }
 
-
     /* Define Package Datatype */
     private createDataType = async () => {
         const payload = privatePackageDatatypePayload()
-        const dataType = await this.ff.createDatatype(
-            payload,
-            {
-                publish: true,
-                confirm: true
-            }
-        )
+        const dataType = await this.ff.createDatatype(payload, {
+            publish: true,
+            confirm: true,
+        })
         return dataType
     }
 
@@ -105,7 +111,7 @@ export default class PackageService {
         const payload = privatePackageDatatypePayload()
         const dataTypes = await this.ff.getDatatypes({
             name: payload.name,
-            version: payload.version
+            version: payload.version,
         })
         return dataTypes.length > 0
     }
@@ -118,13 +124,12 @@ export default class PackageService {
         const payload = privatePackageDatatypePayload()
         const dataTypes = await this.ff.getDatatypes({
             name: payload.name,
-            version: payload.version
+            version: payload.version,
         })
         return dataTypes[0]
     }
 
     /* Blockchain Queries */
-
 
     public getLocalPackage = async (id: string) => {
         try {
@@ -137,55 +142,87 @@ export default class PackageService {
 
     /* Chaincode Queries */
 
-    public createPackage = async (externalId: string, packageDetails: PackageDetails, pii: PackagePII) => {
-        const res = await this.ff.invokeContractAPI(contractInterface.name, "CreatePackage",
+    public createPackage = async (
+        externalId: string,
+        packageDetails: PackageDetails,
+        pii: PackagePII,
+    ) => {
+        const salt = crypto.randomBytes(16).toString("hex")
+        const res = await this.ff.invokeContractAPI(
+            contractInterface.name,
+            "CreatePackage",
             {
                 input: {
                     externalId,
+                    salt,
                 },
                 options: {
                     transientMap: {
                         pii: JSON.stringify(pii),
-                        packageDetails: JSON.stringify(packageDetails)
-                    }
-                }
+                        packageDetails: JSON.stringify(packageDetails),
+                    },
+                },
             },
             {
                 publish: true,
-                confirm: true
-            }
+                confirm: true,
+            },
         )
         return res
     }
 
     public updatePackageStatus = async (externalId: string, status: Status) => {
-        const res = await this.ff.invokeContractAPI(contractInterface.name, "UpdatePackageStatus", {
-            input: { externalId, status }
-        }, { confirm: true, publish: true })
+        const res = await this.ff.invokeContractAPI(
+            contractInterface.name,
+            "UpdatePackageStatus",
+            {
+                input: { externalId, status },
+            },
+            { confirm: true, publish: true },
+        )
 
         return res
     }
 
-    public readBlockchainPackage = async (externalId: string): Promise<BlockchainPackage> => {
-        const res = await this.ff.queryContractAPI(contractInterface.name, "ReadBlockchainPackage", {
-            input: { externalId }
-        }, { confirm: true, publish: true })
+    public readBlockchainPackage = async (
+        externalId: string,
+    ): Promise<BlockchainPackage> => {
+        const res = await this.ff.queryContractAPI(
+            contractInterface.name,
+            "ReadBlockchainPackage",
+            {
+                input: { externalId },
+            },
+            { confirm: true, publish: true },
+        )
 
         return res as BlockchainPackage
     }
 
-    public readPackageDetailsAndPII = async (externalId: string): Promise<any> => {
-        const res = await this.ff.queryContractAPI(contractInterface.name, "ReadPackageDetailsAndPII", {
-            input: { externalId }
-        }, { confirm: true, publish: true })
+    public readPackageDetailsAndPII = async (
+        externalId: string,
+    ): Promise<any> => {
+        const res = await this.ff.queryContractAPI(
+            contractInterface.name,
+            "ReadPackageDetailsAndPII",
+            {
+                input: { externalId },
+            },
+            { confirm: true, publish: true },
+        )
 
-        return res 
+        return res
     }
 
     public deletePackage = async (externalId: string) => {
-        const res = await this.ff.invokeContractAPI(contractInterface.name, "DeletePackage", {
-            input: { externalId }
-        }, { confirm: true, publish: true })
+        const res = await this.ff.invokeContractAPI(
+            contractInterface.name,
+            "DeletePackage",
+            {
+                input: { externalId },
+            },
+            { confirm: true, publish: true },
+        )
 
         return res
     }

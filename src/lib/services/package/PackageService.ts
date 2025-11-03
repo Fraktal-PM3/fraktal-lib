@@ -1,13 +1,13 @@
-import FireFly from "@hyperledger/firefly-sdk"
 import { privatePackageDatatypePayload } from "../../datatypes/package"
 import contractInterface from "./interface.json"
+import FireFly from "@hyperledger/firefly-sdk"
+import crypto, { randomUUID } from "crypto"
 import {
     BlockchainPackage,
     PackageDetails,
     PackagePII,
     Status,
 } from "./types.common"
-import crypto from "crypto"
 
 export default class PackageService {
     private ff: FireFly
@@ -220,6 +220,26 @@ export default class PackageService {
             "DeletePackage",
             {
                 input: { externalId },
+            },
+            { confirm: true, publish: true },
+        )
+
+        return res
+    }
+
+    public proposeTransfer = async (externalId: string, toMSP: string, price: number, expiryISO?: string) => {
+        const createdISO = new Date().toISOString()
+        const termsId = randomUUID()
+        const res = await this.ff.invokeContractAPI(
+            contractInterface.name,
+            "ProposeTransfer",
+            {
+                input: { externalId, termsId, toMSP, createdISO, expiryISO },
+                options: {
+                    transientMap: {
+                        privateTransferTerms: JSON.stringify({ price }),
+                    }
+                }
             },
             { confirm: true, publish: true },
         )

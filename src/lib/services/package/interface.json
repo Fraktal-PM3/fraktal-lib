@@ -2,12 +2,12 @@
     "namespace": "default",
     "name": "pm3package",
     "description": "FFI for PM3 PackageContract",
-    "version": "1.0",
+    "version": "1.1",
     "methods": [
         {
             "name": "CreatePackage",
             "pathname": "",
-            "description": "Create a package. Transient keys: 'pii' (JSON of PackagePII), 'packageDetails' (JSON of packageDetails).",
+            "description": "Create a package. Transient keys: 'pii' (JSON of PackagePII), 'packageDetails' (JSON of PackageDetails).",
             "params": [
                 {
                     "name": "externalId",
@@ -48,7 +48,7 @@
         {
             "name": "ReadPackageDetailsAndPII",
             "pathname": "",
-            "description": "Read the private package details and PII by external ID (caller must be in authorized org)",
+            "description": "Read the private package details and PII by external ID. Only the owner org (ownerOrgMSP) can read from its implicit collection.",
             "params": [
                 {
                     "name": "externalId",
@@ -69,7 +69,7 @@
         {
             "name": "UpdatePackageStatus",
             "pathname": "",
-            "description": "Update status (only owner; SUCCEEDED requires role pm3)",
+            "description": "Update status (only owner org may update; setting to 'succeeded' additionally requires attribute role=pm3).",
             "params": [
                 {
                     "name": "externalId",
@@ -98,7 +98,7 @@
         {
             "name": "DeletePackage",
             "pathname": "",
-            "description": "Delete a package (PM3 anytime, or ombud while PENDING)",
+            "description": "Delete a package (requires role=pm3 anytime, or role=ombud while status is PENDING).",
             "params": [
                 {
                     "name": "externalId",
@@ -129,6 +129,140 @@
                     }
                 }
             ]
+        },
+        {
+            "name": "ProposeTransfer",
+            "pathname": "",
+            "description": "Propose a transfer of a package to another org. Only current owner can propose. Transient key required: 'privateTransferTerms' (JSON).",
+            "params": [
+                {
+                    "name": "externalId",
+                    "schema": {
+                        "type": "string"
+                    }
+                },
+                {
+                    "name": "termsId",
+                    "schema": {
+                        "type": "string"
+                    }
+                },
+                {
+                    "name": "toMSP",
+                    "schema": {
+                        "type": "string"
+                    }
+                },
+                {
+                    "name": "createdISO",
+                    "schema": {
+                        "type": "string"
+                    }
+                },
+                {
+                    "name": "expiryISO",
+                    "schema": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                }
+            ],
+            "returns": []
+        },
+        {
+            "name": "CheckPackageDetailsAndPIIHash",
+            "pathname": "",
+            "description": "Compute and compare the SHA-256 hash of stored (salt, PackageDetails, PII) against expectedHash.",
+            "params": [
+                {
+                    "name": "externalId",
+                    "schema": {
+                        "type": "string"
+                    }
+                },
+                {
+                    "name": "expectedHash",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "returns": [
+                {
+                    "name": "",
+                    "schema": {
+                        "type": "boolean"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "ReadTransferTerms",
+            "pathname": "",
+            "description": "Read public transfer terms by termsId.",
+            "params": [
+                {
+                    "name": "termsId",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "returns": [
+                {
+                    "name": "",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "ReadPrivateTransferTerms",
+            "pathname": "",
+            "description": "Read private transfer terms by termsId. Only the recipient org (toMSP) may read from its implicit collection.",
+            "params": [
+                {
+                    "name": "termsId",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "returns": [
+                {
+                    "name": "",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "AcceptTransfer",
+            "pathname": "",
+            "description": "Accept a transfer for a package. Only the recipient org (toMSP) may accept. Requires matching 'privateTransferTerms' in transient, and a verified packageDetailsAndPIIHash.",
+            "params": [
+                {
+                    "name": "externalId",
+                    "schema": {
+                        "type": "string"
+                    }
+                },
+                {
+                    "name": "termsId",
+                    "schema": {
+                        "type": "string"
+                    }
+                },
+                {
+                    "name": "packageDetailsAndPIIHash",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "returns": []
         }
     ],
     "events": [
@@ -187,6 +321,36 @@
                 "type": "object",
                 "properties": {
                     "id": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        {
+            "name": "ProposeTransfer",
+            "description": "Emitted when a transfer proposal is created",
+            "details": {
+                "type": "object",
+                "properties": {
+                    "externalId": {
+                        "type": "string"
+                    },
+                    "termsId": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        {
+            "name": "AcceptTransfer",
+            "description": "Emitted when a transfer is accepted",
+            "details": {
+                "type": "object",
+                "properties": {
+                    "externalId": {
+                        "type": "string"
+                    },
+                    "termsId": {
                         "type": "string"
                     }
                 }

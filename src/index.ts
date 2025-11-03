@@ -14,7 +14,7 @@ const main = async () => {
     const ffStatus = await ffService.getStatus()
 
     const fbService = new FabconnectService("http://localhost:5102")
-    const fbStatus = await fbService.getChainInfo("pm3", "admin")
+    const fbIdentities = await fbService.getIdentities()
 
     const packageService = new PackageService(ffService)
     await packageService.initalize()
@@ -31,7 +31,6 @@ const main = async () => {
             lat: 37.8044,
             lng: -122.2711,
         },
-        address: "5678 Residential St, City, Country",
         size: {
             width: 30,
             height: 20,
@@ -52,20 +51,24 @@ const main = async () => {
     )
     console.log(res1)
 
-    // const res2 = await packageService.readBlockchainPackage(packageID)
-    // console.log(res2)
-    //
-    // const res3 = await packageService.updatePackageStatus(
-    //     packageID,
-    //     Status.READY_FOR_PICKUP,
-    // )
-    // console.log(res3)
-    //
-    // const res4 = await packageService.readBlockchainPackage(packageID)
-    // console.log(res4)
-    //
-    // const res5 = await packageService.readPackageDetailsAndPII(packageID)
-    // console.log("PII", res5)
+    const res2 = await packageService.readBlockchainPackage(packageID)
+    console.log(res2)
+
+    const res3 = await packageService.updatePackageStatus(
+        packageID,
+        Status.READY_FOR_PICKUP,
+    )
+    console.log(res3)
+
+    const res4 = await packageService.readBlockchainPackage(packageID)
+    console.log(res4)
+    
+    const res5 = await packageService.readPackageDetailsAndPII(packageID)
+    console.log("PII", res5)
+
+    const res6 = await packageService.proposeTransfer(packageID, "Org2MSP", 100, new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString())
+    console.log(res6)
+
 
     // expect error since package is not in a deletable state
     // const res5 = await packageService.deletePackage(packageID)

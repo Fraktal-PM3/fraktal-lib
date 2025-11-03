@@ -59,7 +59,6 @@ export type Transfer = {
 export type PackageDetails = {
     pickupLocation: Location
     dropLocation: Location
-    address: string
     size: Size
     weightKg: number
     urgency: Urgency

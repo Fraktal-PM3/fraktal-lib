@@ -1,23 +1,31 @@
-import FireFly, { FireFlyOptionsInput } from "@hyperledger/firefly-sdk"
-import { randomUUID } from "crypto"
+import {
+    PackagePII,
+    Status,
+    Urgency,
+} from "./lib/services/package/types.common"
 import FabconnectService from "./lib/services/fabconnect/FabconnectService"
+import FireFly, { FireFlyOptionsInput } from "@hyperledger/firefly-sdk"
 import PackageService from "./lib/services/package/PackageService"
-import { Status, Urgency } from "./lib/services/package/types.common"
+import crypto, { randomUUID } from "crypto"
 
 const main = async () => {
-    const ffOptions: FireFlyOptionsInput = {
+    const org1FFOptions: FireFlyOptionsInput = {
         host: "http://localhost:8000",
         namespace: "default",
     }
+    const org2FFOptions: FireFlyOptionsInput = {
+        host: "http://localhost:8001",
+        namespace: "default",
+    }
 
-    const ffService = new FireFly(ffOptions)
-    const ffStatus = await ffService.getStatus()
+    const org1FF = new FireFly(org1FFOptions)
+    const org2FF = new FireFly(org2FFOptions)
 
-    const fbService = new FabconnectService("http://localhost:5102")
-    const fbIdentities = await fbService.getIdentities()
+    const org1PkgService = new PackageService(org1FF)
+    const org2PkgService = new PackageService(org2FF)
 
-    const packageService = new PackageService(ffService)
-    await packageService.initalize()
+    await org1PkgService.initalize()
+    await org2PkgService.initalize()
 
     const packageID = randomUUID()
     const packageDetails = {
@@ -40,38 +48,59 @@ const main = async () => {
         urgency: Urgency.NONE,
     }
 
-    const pii = {
+    const pii: PackagePII = {
         name: "John Doe",
     }
 
-    const res1 = await packageService.createPackage(
+    const salt = crypto.randomBytes(16).toString("hex")
+    const res1 = await org1PkgService.createPackage(
         packageID,
         packageDetails,
         pii,
+        salt,
     )
     console.log(res1)
 
-    const res2 = await packageService.readBlockchainPackage(packageID)
+    const res2 = await org1PkgService.readBlockchainPackage(packageID)
     console.log(res2)
 
-    const res3 = await packageService.updatePackageStatus(
+    const res3 = await org1PkgService.updatePackageStatus(
         packageID,
         Status.READY_FOR_PICKUP,
     )
     console.log(res3)
 
-    const res4 = await packageService.readBlockchainPackage(packageID)
+    const res4 = await org1PkgService.readBlockchainPackage(packageID)
     console.log(res4)
-    
-    const res5 = await packageService.readPackageDetailsAndPII(packageID)
+
+    const res5 = await org1PkgService.readPackageDetailsAndPII(packageID)
     console.log("PII", res5)
 
-    const res6 = await packageService.proposeTransfer(packageID, "Org2MSP", 100, new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString())
+    const terms = {
+        id: randomUUID(),
+        price: 100,
+    }
+
+    const res6 = await org1PkgService.proposeTransfer(
+        packageID,
+        "Org2MSP",
+        terms,
+        new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    )
     console.log(res6)
 
+    const res7 = await org2PkgService.acceptTransfer(
+        packageID,
+        terms.id,
+        packageDetails,
+        pii,
+        salt,
+        { price: 100 },
+    )
+    console.log(res7)
 
     // expect error since package is not in a deletable state
-    // const res5 = await packageService.deletePackage(packageID)
+    // const res5 = await org1PkgService.deletePackage(packageID)
     // console.log(res5)
 }
 

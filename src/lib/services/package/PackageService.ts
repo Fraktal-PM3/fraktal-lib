@@ -1,7 +1,9 @@
 import { privatePackageDatatypePayload } from "../../datatypes/package"
+import stringify from "json-stringify-deterministic"
+import sortKeysRecursive from "sort-keys-recursive"
 import contractInterface from "./interface.json"
 import FireFly from "@hyperledger/firefly-sdk"
-import crypto, { randomUUID } from "crypto"
+import crypto from "crypto"
 import {
     BlockchainPackage,
     PackageDetails,
@@ -146,8 +148,8 @@ export default class PackageService {
         externalId: string,
         packageDetails: PackageDetails,
         pii: PackagePII,
+        salt: string,
     ) => {
-        const salt = crypto.randomBytes(16).toString("hex")
         const res = await this.ff.invokeContractAPI(
             contractInterface.name,
             "CreatePackage",
@@ -227,17 +229,55 @@ export default class PackageService {
         return res
     }
 
-    public proposeTransfer = async (externalId: string, toMSP: string, price: number, expiryISO?: string) => {
+    public proposeTransfer = async (
+        externalId: string,  
+        toMSP: string, 
+        terms: { price: number, id: string }, 
+        expiryISO?: string
+    ) => {
         const createdISO = new Date().toISOString()
-        const termsId = randomUUID()
+        
         const res = await this.ff.invokeContractAPI(
             contractInterface.name,
             "ProposeTransfer",
             {
-                input: { externalId, termsId, toMSP, createdISO, expiryISO },
+                input: { externalId, termsId: terms.id, toMSP, createdISO, expiryISO },
                 options: {
                     transientMap: {
-                        privateTransferTerms: JSON.stringify({ price }),
+                        privateTransferTerms: JSON.stringify({ 
+                            price: terms.price 
+                        }),
+                    }
+                }
+            },
+            { confirm: true, publish: true },
+        )
+
+        return res
+    }
+
+    public acceptTransfer = async (
+        externalId: string, 
+        termsId: string, 
+        packageDetails: PackageDetails, 
+        pii: PackagePII, 
+        salt: string, 
+        privateTransferTerms: { price: number }
+    ) => {
+        // hash the package details and PII to ensure integrity
+        const packageDetailsAndPIIHash = crypto
+            .createHash("sha256")
+            .update(stringify(sortKeysRecursive({ packageDetails, pii, salt })))
+            .digest("hex")
+
+        const res = await this.ff.invokeContractAPI(
+            contractInterface.name,
+            "AcceptTransfer",
+            {
+                input: { externalId, termsId, packageDetailsAndPIIHash },
+                options: {
+                    transientMap: {
+                        privateTransferTerms: JSON.stringify(privateTransferTerms)
                     }
                 }
             },

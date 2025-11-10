@@ -78,3 +78,7 @@ export type BlockchainPackage = {
 }
 
 export type PackageDetailsWithId = PackageDetails & { id: string }
+
+export type PackageEventHandler = (
+    res: { txid: string | undefined; output: any; timestamp: string },
+) => void

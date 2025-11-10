@@ -52,6 +52,13 @@ const main = async () => {
         name: "John Doe",
     }
 
+    org2PkgService.onEvent("CreatePackage", (args: any) => {
+        console.log("=================================")
+        console.log(args)
+        console.log("=================================")
+
+    })
+
     const salt = crypto.randomBytes(16).toString("hex")
     const res1 = await org1PkgService.createPackage(
         packageID,

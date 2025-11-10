@@ -1,12 +1,13 @@
+import FireFly, { FireFlyEventDelivery } from "@hyperledger/firefly-sdk"
 import { privatePackageDatatypePayload } from "../../datatypes/package"
 import stringify from "json-stringify-deterministic"
 import sortKeysRecursive from "sort-keys-recursive"
 import contractInterface from "./interface.json"
-import FireFly from "@hyperledger/firefly-sdk"
 import crypto from "crypto"
 import {
     BlockchainPackage,
     PackageDetails,
+    PackageEventHandler,
     PackagePII,
     Status,
     StoreObject,
@@ -15,6 +16,7 @@ import {
 export default class PackageService {
     private ff: FireFly
     private initalized: boolean = false
+    private handlers = new Map<string, PackageEventHandler[]>()
 
     constructor(ff: FireFly) {
         this.ff = ff
@@ -58,6 +60,21 @@ export default class PackageService {
                 },
             )
         })
+
+        this.ff.listen({ filter: { events: "blockchain_event" }, options: { withData: true } }, async (_socket, event) => {
+            const { blockchainEvent } = event as FireFlyEventDelivery
+            if (!blockchainEvent?.name) return
+
+            const handlers = this.handlers.get(blockchainEvent.name)
+            if (!handlers || handlers.length === 0) return
+            handlers.forEach(handler => {
+                handler({ 
+                    output: blockchainEvent.output, 
+                    timestamp: blockchainEvent.timestamp, 
+                    txid: blockchainEvent.tx.blockchainId 
+                })
+            })
+        })
     }
 
     private getContractInterface = async () => {
@@ -80,6 +97,16 @@ export default class PackageService {
         })
     }
 
+    public onEvent = async (
+        eventName: string,
+        handler: (...args: any) => void
+    ) => {
+        if (!this.handlers.has(eventName)) {
+            this.handlers.set(eventName, [])
+        }
+        this.handlers.get(eventName)?.push(handler)
+    }
+      
     private getContractAPI = async () => {
         const apis = await this.ff.getContractAPIs({
             name: contractInterface.name,

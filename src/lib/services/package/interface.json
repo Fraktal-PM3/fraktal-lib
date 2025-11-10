@@ -263,6 +263,26 @@
                 }
             ],
             "returns": []
+        },
+        {
+            "name": "ExecuteTransfer",
+            "pathname": "",
+            "description": "Execute the transfer of ownership for a package. Only the current owner org may execute after acceptance by the recipient org.",
+            "params": [
+                {
+                    "name": "externalId",
+                    "schema": {
+                        "type": "string"
+                    }
+                },
+                {
+                    "name": "termsId",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "returns": []
         }
     ],
     "events": [
@@ -355,6 +375,22 @@
                     }
                 }
             }
+        },
+        {
+            "name": "ExecuteTransfer",
+            "description": "Emitted when a transfer is executed",
+            "details": {
+                "type": "object",
+                "properties": {
+                    "externalId": {
+                        "type": "string"
+                    },
+                    "termsId": {
+                        "type": "string"
+                    }
+                }
+            }
         }
     ]
 }
+

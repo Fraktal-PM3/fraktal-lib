@@ -1,4 +1,8 @@
-import { PackagePII, Status, Urgency } from "./lib/services/package/types.common"
+import {
+    PackagePII,
+    Status,
+    Urgency,
+} from "./lib/services/package/types.common"
 import FabconnectService from "./lib/services/fabconnect/FabconnectService"
 import FireFly, { FireFlyOptionsInput } from "@hyperledger/firefly-sdk"
 import PackageService from "./lib/services/package/PackageService"
@@ -53,7 +57,7 @@ const main = async () => {
         packageID,
         packageDetails,
         pii,
-        salt
+        salt,
     )
     console.log(res1)
 
@@ -68,7 +72,7 @@ const main = async () => {
 
     const res4 = await org1PkgService.readBlockchainPackage(packageID)
     console.log(res4)
-    
+
     const res5 = await org1PkgService.readPackageDetailsAndPII(packageID)
     console.log("PII", res5)
 
@@ -77,11 +81,30 @@ const main = async () => {
         price: 100,
     }
 
-    const res6 = await org1PkgService.proposeTransfer(packageID, "Org2MSP", terms, new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString())
+    const res6 = await org1PkgService.proposeTransfer(
+        packageID,
+        "Org2MSP",
+        terms,
+        new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    )
     console.log(res6)
 
-    const res7 = await org2PkgService.acceptTransfer(packageID, terms.id, packageDetails, pii, salt, { price: terms.price })
+    const res7 = await org2PkgService.acceptTransfer(
+        packageID,
+        terms.id,
+        packageDetails,
+        pii,
+        salt,
+        { price: terms.price },
+    )
     console.log(res7)
+
+    const res8 = await org1PkgService.executeTransfer(packageID, terms.id, {
+        salt,
+        pii,
+        packageDetails,
+    })
+    console.log(res8)
 
     // expect error since package is not in a deletable state
     // const res5 = await org1PkgService.deletePackage(packageID)

@@ -64,6 +64,12 @@ export type PackageDetails = {
     urgency: Urgency
 }
 
+export type StoreObject = {
+    salt: string
+    pii: PackagePII
+    packageDetails: PackageDetails
+}
+
 export type BlockchainPackage = {
     externalId: string
     ownerOrgMSP: string
@@ -72,4 +78,3 @@ export type BlockchainPackage = {
 }
 
 export type PackageDetailsWithId = PackageDetails & { id: string }
-

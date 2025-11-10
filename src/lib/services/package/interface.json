@@ -387,6 +387,9 @@
                     },
                     "termsId": {
                         "type": "string"
+                    },
+                    "newOwner": {
+                        "type": "string"
                     }
                 }
             }

@@ -1,12 +1,11 @@
-import {
-    PackagePII,
-    Status,
-    Urgency,
-} from "./lib/services/package/types.common"
-import FabconnectService from "./lib/services/fabconnect/FabconnectService"
+import { PackagePII, Status, Urgency } from "./lib/services/package/types.common"
 import FireFly, { FireFlyOptionsInput } from "@hyperledger/firefly-sdk"
-import PackageService from "./lib/services/package/PackageService"
+import { PackageService } from "./lib/services/package/PackageService"
 import crypto, { randomUUID } from "crypto"
+
+// Exports for docs
+export { PackageService } from "./lib/services/package/PackageService"
+export * from "./lib/services/package/types.common"
 
 const main = async () => {
     const org1FFOptions: FireFlyOptionsInput = {

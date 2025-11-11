@@ -1,0 +1,25 @@
+  name: Trigger Documentation Sync
+
+  on:
+    push:
+      branches:
+        - main  # Adjust if your default branch is different
+      paths:
+        - 'src/**'  # Only trigger when source code changes
+        - 'typedoc.json'  # Also trigger when TypeDoc config changes
+  jobs:
+    trigger-sync:
+      runs-on: ubuntu-latest
+      steps:
+        - name: Trigger documentation update in fraktal repo
+          uses: peter-evans/repository-dispatch@v3
+          with:
+            token: ${{ secrets.PAT_TOKEN }}
+            repository: Fraktal-PM3/fraktal
+            event-type: update-sdk-docs
+            client-payload: |
+              {
+                "repository": "Fraktal-PM3/fraktal-lib",
+                "sha": "${{ github.sha }}",
+                "ref": "${{ github.ref }}"
+              }

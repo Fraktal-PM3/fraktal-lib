@@ -10,7 +10,17 @@ const FF_NAMESPACE = process.env.FF_NAMESPACE || "default"
 const FABRIC_CHANNEL = process.env.FABRIC_CHANNEL || "pm3"
 const FF_IDENTITY = process.env.FF_IDENTITY || "org_f5440c"
 
-describe("Package Lifecycle", () => {
+describe("Package Lifecycle", async () => {
+
+    const org1FFOptions: FireFlyOptionsInput = {
+        host: FF_HOST,
+        namespace: FF_NAMESPACE,
+    }
+
+    const org1FF = new FireFly(org1FFOptions)
+    const org1PkgService = new PackageService(org1FF)
+
+    await org1PkgService.initalize()
 
     
 

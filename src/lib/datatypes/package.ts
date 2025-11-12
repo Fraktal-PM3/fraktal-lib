@@ -1,18 +1,17 @@
 import { FireFlyDatatypeRequest } from "@hyperledger/firefly-sdk"
 
-export const PRIVATE_PACKAGE_DT_NAME = "PrivatePackage"
-export const PRIVATE_PACKAGE_DT_VERSION = "1.0.0"
+export const PACKAGE_DETAILS_DT_NAME = "PackageDetails"
+export const PACKAGE_DETAILS_DT_VERSION = "1.0.0"
 
-export const PrivatePackageSchema2020 = {
+export const PackageDetailsSchema2020 = {
     $schema: "https://json-schema.org/draft/2020-12/schema",
-    $id: `ff://default/${PRIVATE_PACKAGE_DT_NAME}/${PRIVATE_PACKAGE_DT_VERSION}`,
-    title: "PrivatePackage",
+    $id: `ff://default/${PACKAGE_DETAILS_DT_NAME}/${PACKAGE_DETAILS_DT_VERSION}`,
+    title: "PackageDetails",
     type: "object",
     properties: {
         id: { type: "string" },
         pickupLocation: { $ref: "#/definitions/Location" },
         dropLocation: { $ref: "#/definitions/Location" },
-        address: { type: "string" },
         size: { $ref: "#/definitions/Size" },
         weightKg: { type: "number" },
         urgency: { $ref: "#/definitions/Urgency" },
@@ -21,7 +20,6 @@ export const PrivatePackageSchema2020 = {
         "id",
         "pickupLocation",
         "dropLocation",
-        "address",
         "size",
         "weightKg",
         "urgency",
@@ -31,12 +29,11 @@ export const PrivatePackageSchema2020 = {
         Location: {
             type: "object",
             properties: {
-                name: { type: "string" },
                 address: { type: "string" },
                 lat: { type: "number" },
                 lng: { type: "number" },
             },
-            required: ["name", "address", "lat", "lng"],
+            required: ["address", "lat", "lng"],
             additionalProperties: false,
         },
         Size: {
@@ -56,12 +53,12 @@ export const PrivatePackageSchema2020 = {
     },
 }
 
-export const privatePackageDatatypePayload =(namespace = "default") : FireFlyDatatypeRequest => ({
-    name: PRIVATE_PACKAGE_DT_NAME,
-    version: PRIVATE_PACKAGE_DT_VERSION,
+export const packageDetailsDatatypePayload =(namespace = "default") : FireFlyDatatypeRequest => ({
+    name: PACKAGE_DETAILS_DT_NAME,
+    version: PACKAGE_DETAILS_DT_VERSION,
     validator: "json",
     value: {
-        ...PrivatePackageSchema2020,
-        $id: `ff://${namespace}/${PRIVATE_PACKAGE_DT_NAME}/${PRIVATE_PACKAGE_DT_VERSION}`,
+        ...PackageDetailsSchema2020,
+        $id: `ff://${namespace}/${PACKAGE_DETAILS_DT_NAME}/${PACKAGE_DETAILS_DT_VERSION}`,
     },
 })

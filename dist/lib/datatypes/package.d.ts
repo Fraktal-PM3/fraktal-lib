@@ -1,7 +1,7 @@
 import { FireFlyDatatypeRequest } from "@hyperledger/firefly-sdk";
-export declare const PRIVATE_PACKAGE_DT_NAME = "PrivatePackage";
-export declare const PRIVATE_PACKAGE_DT_VERSION = "1.0.0";
-export declare const PrivatePackageSchema2020: {
+export declare const PACKAGE_DETAILS_DT_NAME = "PackageDetails";
+export declare const PACKAGE_DETAILS_DT_VERSION = "1.0.0";
+export declare const PackageDetailsSchema2020: {
     $schema: string;
     $id: string;
     title: string;
@@ -15,9 +15,6 @@ export declare const PrivatePackageSchema2020: {
         };
         dropLocation: {
             $ref: string;
-        };
-        address: {
-            type: string;
         };
         size: {
             $ref: string;
@@ -35,9 +32,6 @@ export declare const PrivatePackageSchema2020: {
         Location: {
             type: string;
             properties: {
-                name: {
-                    type: string;
-                };
                 address: {
                     type: string;
                 };
@@ -73,4 +67,4 @@ export declare const PrivatePackageSchema2020: {
         };
     };
 };
-export declare const privatePackageDatatypePayload: (namespace?: string) => FireFlyDatatypeRequest;
+export declare const packageDetailsDatatypePayload: (namespace?: string) => FireFlyDatatypeRequest;

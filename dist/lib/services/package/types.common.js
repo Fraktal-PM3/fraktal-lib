@@ -53,3 +53,4 @@ var TransferStatus;
     /** Proposal expired without action. */
     TransferStatus["EXPIRED"] = "expired";
 })(TransferStatus || (exports.TransferStatus = TransferStatus = {}));
+//# sourceMappingURL=types.common.js.map

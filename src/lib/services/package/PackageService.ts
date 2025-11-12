@@ -1,5 +1,5 @@
 import FireFly, { FireFlyContractAPIResponse, FireFlyContractInterfaceResponse, FireFlyContractInvokeResponse, FireFlyContractQueryResponse, FireFlyDataResponse, FireFlyDatatypeResponse, FireFlyEventDelivery } from "@hyperledger/firefly-sdk"
-import { privatePackageDatatypePayload } from "../../datatypes/package"
+import { PACKAGE_DETAILS_DT_NAME, PACKAGE_DETAILS_DT_VERSION, packageDetailsDatatypePayload } from "../../datatypes/package"
 import stringify from "json-stringify-deterministic"
 import sortKeysRecursive from "sort-keys-recursive"
 import contractInterface from "./interface.json"
@@ -7,6 +7,7 @@ import crypto from "crypto"
 import {
     BlockchainPackage,
     PackageDetails,
+    PackageDetailsWithId,
     PackageEventHandler,
     PackagePII,
     Status,
@@ -214,7 +215,7 @@ export class PackageService {
      * @remarks Internal helper; not intended for direct use.
      */
     private createDataType = async (): Promise<FireFlyDatatypeResponse> => {
-        const payload = privatePackageDatatypePayload()
+        const payload = packageDetailsDatatypePayload()
         const dataType = await this.ff.createDatatype(payload, {
             publish: true,
             confirm: true,
@@ -228,7 +229,7 @@ export class PackageService {
      * @remarks Internal helper; not exposed if `excludePrivate` is true.
      */
     private dataTypeExists = async (): Promise<boolean> => {
-        const payload = privatePackageDatatypePayload()
+        const payload = packageDetailsDatatypePayload()
         const dataTypes = await this.ff.getDatatypes({
             name: payload.name,
             version: payload.version,
@@ -246,7 +247,7 @@ export class PackageService {
             throw new Error("Data type does not exist")
         }
 
-        const payload = privatePackageDatatypePayload()
+        const payload = packageDetailsDatatypePayload()
         const dataTypes = await this.ff.getDatatypes({
             name: payload.name,
             version: payload.version,
@@ -268,6 +269,18 @@ export class PackageService {
         return res || null
     }
 
+    public uploadPackage = async (pkg: PackageDetailsWithId) => {
+        const res = await this.ff.uploadData({
+            datatype: { 
+                name: PACKAGE_DETAILS_DT_NAME, 
+                version: PACKAGE_DETAILS_DT_VERSION 
+            },
+            id: pkg.id,
+            value: pkg
+        })
+        return res
+    }
+
     // -------------------------
     // Chaincode (contract) calls
     // -------------------------
@@ -279,6 +292,7 @@ export class PackageService {
      * @param packageDetails Public package metadata (serialized into transient map).
      * @param pii Private identifiable information (serialized into transient map).
      * @param salt Random salt used for hashing private data elsewhere.
+     * @param broadcast Whether to broadcast the transaction (default: `true`).
      * @returns FireFly invocation response (transaction submission).
      *
      * @example
@@ -291,6 +305,7 @@ export class PackageService {
         packageDetails: PackageDetails,
         pii: PackagePII,
         salt: string,
+        broadcast = true,
     ): Promise<FireFlyContractInvokeResponse> => {
         const res = await this.ff.invokeContractAPI(
             contractInterface.name,
@@ -312,6 +327,11 @@ export class PackageService {
                 confirm: true,
             },
         )
+
+        if (!res.error && broadcast) {
+            this.uploadPackage({...packageDetails, id: externalId})
+        }
+
         return res
     }
 

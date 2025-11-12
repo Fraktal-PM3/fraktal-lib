@@ -95,7 +95,7 @@ class PackageService {
             });
             this.ff.listen({ filter: { events: "blockchain_event" }, options: { withData: true } }, async (_socket, event) => {
                 const { blockchainEvent } = event;
-                if (!(blockchainEvent === null || blockchainEvent === void 0 ? void 0 : blockchainEvent.name))
+                if (!blockchainEvent?.name)
                     return;
                 const handlers = this.handlers.get(blockchainEvent.name);
                 if (!handlers || handlers.length === 0)
@@ -149,11 +149,10 @@ class PackageService {
          * ```
          */
         this.onEvent = async (eventName, handler) => {
-            var _a;
             if (!this.handlers.has(eventName)) {
                 this.handlers.set(eventName, []);
             }
-            (_a = this.handlers.get(eventName)) === null || _a === void 0 ? void 0 : _a.push(handler);
+            this.handlers.get(eventName)?.push(handler);
         };
         /**
          * Looks up the contract API by name from FireFly.
@@ -187,7 +186,7 @@ class PackageService {
          * @remarks Internal helper; not intended for direct use.
          */
         this.createDataType = async () => {
-            const payload = (0, package_1.privatePackageDatatypePayload)();
+            const payload = (0, package_1.packageDetailsDatatypePayload)();
             const dataType = await this.ff.createDatatype(payload, {
                 publish: true,
                 confirm: true,
@@ -200,7 +199,7 @@ class PackageService {
          * @remarks Internal helper; not exposed if `excludePrivate` is true.
          */
         this.dataTypeExists = async () => {
-            const payload = (0, package_1.privatePackageDatatypePayload)();
+            const payload = (0, package_1.packageDetailsDatatypePayload)();
             const dataTypes = await this.ff.getDatatypes({
                 name: payload.name,
                 version: payload.version,
@@ -216,7 +215,7 @@ class PackageService {
             if (!this.dataTypeExists()) {
                 throw new Error("Data type does not exist");
             }
-            const payload = (0, package_1.privatePackageDatatypePayload)();
+            const payload = (0, package_1.packageDetailsDatatypePayload)();
             const dataTypes = await this.ff.getDatatypes({
                 name: payload.name,
                 version: payload.version,
@@ -235,6 +234,17 @@ class PackageService {
             const res = await this.ff.getData(id);
             return res || null;
         };
+        this.uploadPackage = async (pkg) => {
+            const res = await this.ff.uploadData({
+                datatype: {
+                    name: package_1.PACKAGE_DETAILS_DT_NAME,
+                    version: package_1.PACKAGE_DETAILS_DT_VERSION
+                },
+                id: pkg.id,
+                value: pkg
+            });
+            return res;
+        };
         // -------------------------
         // Chaincode (contract) calls
         // -------------------------
@@ -245,6 +255,7 @@ class PackageService {
          * @param packageDetails Public package metadata (serialized into transient map).
          * @param pii Private identifiable information (serialized into transient map).
          * @param salt Random salt used for hashing private data elsewhere.
+         * @param broadcast Whether to broadcast the transaction (default: `true`).
          * @returns FireFly invocation response (transaction submission).
          *
          * @example
@@ -252,7 +263,7 @@ class PackageService {
          * await svc.createPackage("pkg-001", details, { name: "Alice" }, saltHex);
          * ```
          */
-        this.createPackage = async (externalId, packageDetails, pii, salt) => {
+        this.createPackage = async (externalId, packageDetails, pii, salt, broadcast = true) => {
             const res = await this.ff.invokeContractAPI(interface_json_1.default.name, "CreatePackage", {
                 input: {
                     externalId,
@@ -268,6 +279,9 @@ class PackageService {
                 publish: true,
                 confirm: true,
             });
+            if (!res.error && broadcast) {
+                this.uploadPackage({ ...packageDetails, id: externalId });
+            }
             return res;
         };
         /**
@@ -403,3 +417,4 @@ class PackageService {
     }
 }
 exports.PackageService = PackageService;
+//# sourceMappingURL=PackageService.js.map

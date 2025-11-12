@@ -1,5 +1,5 @@
 import FireFly, { FireFlyContractInvokeResponse, FireFlyContractQueryResponse, FireFlyDataResponse, FireFlyDatatypeResponse } from "@hyperledger/firefly-sdk";
-import { BlockchainPackage, PackageDetails, PackagePII, Status, StoreObject } from "./types.common";
+import { BlockchainPackage, PackageDetails, PackageDetailsWithId, PackagePII, Status, StoreObject } from "./types.common";
 /**
  * High-level API for interacting with blockchain-based package management via Hyperledger FireFly.
  *
@@ -121,6 +121,26 @@ export declare class PackageService {
      * @returns The data record (if found) or `null` if missing/errored.
      */
     getLocalPackage: (id: string) => Promise<FireFlyDataResponse | null>;
+    uploadPackage: (pkg: PackageDetailsWithId) => Promise<Required<{
+        blob?: {
+            hash?: string;
+            name?: string;
+            path?: string;
+            public?: string;
+            size?: number;
+        };
+        created?: string;
+        datatype?: {
+            name?: string;
+            version?: string;
+        };
+        hash?: string;
+        id?: string;
+        namespace?: string;
+        public?: string;
+        validator?: string;
+        value?: any;
+    }>>;
     /**
      * Creates a new package on-chain.
      *
@@ -128,6 +148,7 @@ export declare class PackageService {
      * @param packageDetails Public package metadata (serialized into transient map).
      * @param pii Private identifiable information (serialized into transient map).
      * @param salt Random salt used for hashing private data elsewhere.
+     * @param broadcast Whether to broadcast the transaction (default: `true`).
      * @returns FireFly invocation response (transaction submission).
      *
      * @example
@@ -135,7 +156,7 @@ export declare class PackageService {
      * await svc.createPackage("pkg-001", details, { name: "Alice" }, saltHex);
      * ```
      */
-    createPackage: (externalId: string, packageDetails: PackageDetails, pii: PackagePII, salt: string) => Promise<FireFlyContractInvokeResponse>;
+    createPackage: (externalId: string, packageDetails: PackageDetails, pii: PackagePII, salt: string, broadcast?: boolean) => Promise<FireFlyContractInvokeResponse>;
     /**
      * Updates the **status** of an existing package.
      * @param externalId Package external ID.

@@ -1,18 +1,17 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.privatePackageDatatypePayload = exports.PrivatePackageSchema2020 = exports.PRIVATE_PACKAGE_DT_VERSION = exports.PRIVATE_PACKAGE_DT_NAME = void 0;
-exports.PRIVATE_PACKAGE_DT_NAME = "PrivatePackage";
-exports.PRIVATE_PACKAGE_DT_VERSION = "1.0.0";
-exports.PrivatePackageSchema2020 = {
+exports.packageDetailsDatatypePayload = exports.PackageDetailsSchema2020 = exports.PACKAGE_DETAILS_DT_VERSION = exports.PACKAGE_DETAILS_DT_NAME = void 0;
+exports.PACKAGE_DETAILS_DT_NAME = "PackageDetails";
+exports.PACKAGE_DETAILS_DT_VERSION = "1.0.0";
+exports.PackageDetailsSchema2020 = {
     $schema: "https://json-schema.org/draft/2020-12/schema",
-    $id: `ff://default/${exports.PRIVATE_PACKAGE_DT_NAME}/${exports.PRIVATE_PACKAGE_DT_VERSION}`,
-    title: "PrivatePackage",
+    $id: `ff://default/${exports.PACKAGE_DETAILS_DT_NAME}/${exports.PACKAGE_DETAILS_DT_VERSION}`,
+    title: "PackageDetails",
     type: "object",
     properties: {
         id: { type: "string" },
         pickupLocation: { $ref: "#/definitions/Location" },
         dropLocation: { $ref: "#/definitions/Location" },
-        address: { type: "string" },
         size: { $ref: "#/definitions/Size" },
         weightKg: { type: "number" },
         urgency: { $ref: "#/definitions/Urgency" },
@@ -21,7 +20,6 @@ exports.PrivatePackageSchema2020 = {
         "id",
         "pickupLocation",
         "dropLocation",
-        "address",
         "size",
         "weightKg",
         "urgency",
@@ -31,12 +29,11 @@ exports.PrivatePackageSchema2020 = {
         Location: {
             type: "object",
             properties: {
-                name: { type: "string" },
                 address: { type: "string" },
                 lat: { type: "number" },
                 lng: { type: "number" },
             },
-            required: ["name", "address", "lat", "lng"],
+            required: ["address", "lat", "lng"],
             additionalProperties: false,
         },
         Size: {
@@ -55,13 +52,14 @@ exports.PrivatePackageSchema2020 = {
         },
     },
 };
-const privatePackageDatatypePayload = (namespace = "default") => ({
-    name: exports.PRIVATE_PACKAGE_DT_NAME,
-    version: exports.PRIVATE_PACKAGE_DT_VERSION,
+const packageDetailsDatatypePayload = (namespace = "default") => ({
+    name: exports.PACKAGE_DETAILS_DT_NAME,
+    version: exports.PACKAGE_DETAILS_DT_VERSION,
     validator: "json",
     value: {
-        ...exports.PrivatePackageSchema2020,
-        $id: `ff://${namespace}/${exports.PRIVATE_PACKAGE_DT_NAME}/${exports.PRIVATE_PACKAGE_DT_VERSION}`,
+        ...exports.PackageDetailsSchema2020,
+        $id: `ff://${namespace}/${exports.PACKAGE_DETAILS_DT_NAME}/${exports.PACKAGE_DETAILS_DT_VERSION}`,
     },
 });
-exports.privatePackageDatatypePayload = privatePackageDatatypePayload;
+exports.packageDetailsDatatypePayload = packageDetailsDatatypePayload;
+//# sourceMappingURL=package.js.map

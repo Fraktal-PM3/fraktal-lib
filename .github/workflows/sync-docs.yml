@@ -1,12 +1,18 @@
   name: Trigger Documentation Sync
 
-  on:
-    push:
-      branches:
-        - main  # Adjust if your default branch is different
-      paths:
-        - 'src/**'  # Only trigger when source code changes
-        - 'typedoc.json'  # Also trigger when TypeDoc config changes
+on:
+  push:
+    branches:
+      - main  # Adjust if your default branch is different
+    paths:
+      - 'src/**'  # Only trigger when source code changes
+      - 'typedoc.json'  # Also trigger when TypeDoc config changes
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch, tag, or commit sha to use when manually triggering'
+        required: false
+        default: 'main'
   jobs:
     trigger-sync:
       runs-on: ubuntu-latest

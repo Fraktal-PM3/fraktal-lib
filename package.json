@@ -6,6 +6,7 @@
     "types": "dist/index.d.ts",
     "exports": {
       ".": {
+        "import": "./dist/index.js",
         "require": "./dist/index.js",
         "types": "./dist/index.d.ts"
       }
@@ -38,4 +39,4 @@
         "json-stringify-deterministic": "^1.0.12",
         "sort-keys-recursive": "^2.1.10"
     }
-}  
+}

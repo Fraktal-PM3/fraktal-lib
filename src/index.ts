@@ -101,9 +101,6 @@ const main = async () => {
     const res7 = await org2PkgService.acceptTransfer(
         packageID,
         terms.id,
-        packageDetails,
-        pii,
-        salt,
         { price: terms.price },
     )
     console.log(res7)

@@ -5,10 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PackageService = void 0;
 const package_1 = require("../../datatypes/package");
-const json_stringify_deterministic_1 = __importDefault(require("json-stringify-deterministic"));
-const sort_keys_recursive_1 = __importDefault(require("sort-keys-recursive"));
 const interface_json_1 = __importDefault(require("./interface.json"));
-const crypto_1 = __importDefault(require("crypto"));
 /**
  * High-level API for interacting with blockchain-based package management via Hyperledger FireFly.
  *
@@ -308,6 +305,17 @@ class PackageService {
             return res;
         };
         /**
+         * Checks if a package exists on-chain.
+         * @param externalId Package external ID.
+         * @returns `true` if the package exists; otherwise `false`.
+         */
+        this.packageExists = async (externalId) => {
+            const res = await this.ff.queryContractAPI(interface_json_1.default.name, "PackageExists", {
+                input: { externalId },
+            }, { confirm: true, publish: true });
+            return res;
+        };
+        /**
          * Reads the **private** package details and PII visible to the caller’s org.
          * @param externalId Package external ID.
          * @returns Implementation-specific object with details + PII.
@@ -326,6 +334,18 @@ class PackageService {
         this.deletePackage = async (externalId) => {
             const res = await this.ff.invokeContractAPI(interface_json_1.default.name, "DeletePackage", {
                 input: { externalId },
+            }, { confirm: true, publish: true });
+            return res;
+        };
+        /**
+         * Verifies that the private package details and PII hash matches the expected hash.
+         * @param externalId Package external ID.
+         * @param expectedHash Expected SHA256 hex hash.
+         * @returns `true` if the hash matches; otherwise `false`.
+         */
+        this.checkPackageDetailsAndPIIHash = async (externalId, expectedHash) => {
+            const res = await this.ff.queryContractAPI(interface_json_1.default.name, "CheckPackageDetailsAndPIIHash", {
+                input: { externalId, expectedHash },
             }, { confirm: true, publish: true });
             return res;
         };
@@ -364,27 +384,43 @@ class PackageService {
             return res;
         };
         /**
+         * Reads the public transfer terms for a given terms ID.
+         * @param termsId Transfer terms identifier.
+         * @returns The transfer terms as a JSON string.
+         */
+        this.readTransferTerms = async (termsId) => {
+            const res = await this.ff.queryContractAPI(interface_json_1.default.name, "ReadTransferTerms", {
+                input: { termsId },
+            }, { confirm: true, publish: true });
+            return res;
+        };
+        /**
+         * Reads the private transfer terms for a given terms ID.
+         * Only the recipient organization (toMSP) can read their private terms.
+         * @param termsId Transfer terms identifier.
+         * @returns The private transfer terms as a JSON string.
+         */
+        this.readPrivateTransferTerms = async (termsId) => {
+            const res = await this.ff.queryContractAPI(interface_json_1.default.name, "ReadPrivateTransferTerms", {
+                input: { termsId },
+            }, { confirm: true, publish: true });
+            return res;
+        };
+        /**
          * Accepts a previously proposed transfer.
          *
-         * Hashes `{ packageDetails, pii, salt }` using `sha256` (with deterministic
-         * stringify and sorted keys) and submits the hash for integrity verification.
+         * The chaincode internally verifies the package details and PII hash
+         * by calling CheckPackageDetailsAndPIIHash. The caller must provide
+         * the private transfer terms via transient map for verification.
          *
          * @param externalId Package external ID.
          * @param termsId Identifier of the terms being accepted.
-         * @param packageDetails Public package metadata used in integrity hash.
-         * @param pii Private information used in integrity hash.
-         * @param salt The same salt used/recorded off-chain for reproducible hashing.
          * @param privateTransferTerms Private fields (e.g., `price`) sent via `transientMap`.
          * @returns FireFly invocation response.
          */
-        this.acceptTransfer = async (externalId, termsId, packageDetails, pii, salt, privateTransferTerms) => {
-            // hash the package details and PII to ensure integrity
-            const packageDetailsAndPIIHash = crypto_1.default
-                .createHash("sha256")
-                .update((0, json_stringify_deterministic_1.default)((0, sort_keys_recursive_1.default)({ packageDetails, pii, salt })))
-                .digest("hex");
+        this.acceptTransfer = async (externalId, termsId, privateTransferTerms) => {
             const res = await this.ff.invokeContractAPI(interface_json_1.default.name, "AcceptTransfer", {
-                input: { externalId, termsId, packageDetailsAndPIIHash },
+                input: { externalId, termsId },
                 options: {
                     transientMap: {
                         privateTransferTerms: JSON.stringify(privateTransferTerms),

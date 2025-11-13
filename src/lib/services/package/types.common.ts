@@ -17,9 +17,9 @@ export type Location = {
     /** Human-readable street address. */
     address: string
     /** Latitude in decimal degrees (WGS84). */
-    lat: number
+    lat?: number
     /** Longitude in decimal degrees (WGS84). */
-    lng: number
+    lng?: number
 }
 
 /**
@@ -54,6 +54,8 @@ export enum Status {
     SUCCEEDED = "succeeded",
     /** Business process failed (irrecoverable). */
     FAILED = "failed",
+    /** Transfer has been proposed. */
+    PROPOSED = "proposed",
 }
 
 /**
@@ -171,7 +173,7 @@ export type BlockchainPackage = {
      * @remarks
      * Enables integrity checks without disclosing private content.
      */
-    packageDetailsHash: string
+    packageDetailsAndPIIHash: string
 }
 
 /**

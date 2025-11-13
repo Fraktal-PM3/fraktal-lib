@@ -123,5 +123,8 @@ const main = async () => {
     // const res5 = await org1PkgService.deletePackage(packageID)
     // console.log(res5)
 };
-main();
+// Only run main when this file is executed directly (not imported)
+if (require.main === module) {
+    main();
+}
 //# sourceMappingURL=index.js.map

@@ -1,5 +1,17 @@
-import FireFly, { FireFlyContractAPIResponse, FireFlyContractInterfaceResponse, FireFlyContractInvokeResponse, FireFlyContractQueryResponse, FireFlyDataResponse, FireFlyDatatypeResponse, FireFlyEventDelivery } from "@hyperledger/firefly-sdk"
-import { PACKAGE_DETAILS_DT_NAME, PACKAGE_DETAILS_DT_VERSION, packageDetailsDatatypePayload } from "../../datatypes/package"
+import FireFly, {
+    FireFlyContractAPIResponse,
+    FireFlyContractInterfaceResponse,
+    FireFlyContractInvokeResponse,
+    FireFlyContractQueryResponse,
+    FireFlyDataResponse,
+    FireFlyDatatypeResponse,
+    FireFlyEventDelivery,
+} from "@hyperledger/firefly-sdk"
+import {
+    PACKAGE_DETAILS_DT_NAME,
+    PACKAGE_DETAILS_DT_VERSION,
+    packageDetailsDatatypePayload,
+} from "../../datatypes/package"
 import stringify from "json-stringify-deterministic"
 import sortKeysRecursive from "sort-keys-recursive"
 import contractInterface from "./interface.json"
@@ -38,7 +50,7 @@ import {
  *   console.log("New package:", e.output, e.txid)
  * })
  * ```
- * 
+ *
  * @example Creating a Package
  * ```ts
  * const packageDetails = { /* ... *\/ }
@@ -115,20 +127,26 @@ export class PackageService {
             )
         })
 
-        this.ff.listen({ filter: { events: "blockchain_event" }, options: { withData: true } }, async (_socket, event) => {
-            const { blockchainEvent } = event as FireFlyEventDelivery
-            if (!blockchainEvent?.name) return
+        this.ff.listen(
+            {
+                filter: { events: "blockchain_event" },
+                options: { withData: true },
+            },
+            async (_socket, event) => {
+                const { blockchainEvent } = event as FireFlyEventDelivery
+                if (!blockchainEvent?.name) return
 
-            const handlers = this.handlers.get(blockchainEvent.name)
-            if (!handlers || handlers.length === 0) return
-            handlers.forEach(handler => {
-                handler({
-                    output: blockchainEvent.output,
-                    timestamp: blockchainEvent.timestamp,
-                    txid: blockchainEvent.tx.blockchainId
+                const handlers = this.handlers.get(blockchainEvent.name)
+                if (!handlers || handlers.length === 0) return
+                handlers.forEach((handler) => {
+                    handler({
+                        output: blockchainEvent.output,
+                        timestamp: blockchainEvent.timestamp,
+                        txid: blockchainEvent.tx.blockchainId,
+                    })
                 })
-            })
-        })
+            },
+        )
     }
 
     /**
@@ -136,12 +154,13 @@ export class PackageService {
      * @returns The interface (if found) or `null`.
      * @remarks Internal helper; not intended for direct use.
      */
-    private getContractInterface = async (): Promise<FireFlyContractInterfaceResponse | null> => {
-        const interfaces = await this.ff.getContractInterfaces({
-            name: contractInterface.name,
-        })
-        return interfaces[0] || null
-    }
+    private getContractInterface =
+        async (): Promise<FireFlyContractInterfaceResponse | null> => {
+            const interfaces = await this.ff.getContractInterfaces({
+                name: contractInterface.name,
+            })
+            return interfaces[0] || null
+        }
 
     /**
      * Creates the contract interface in FireFly if it does not exist.
@@ -173,7 +192,10 @@ export class PackageService {
      * })
      * ```
      */
-    public onEvent = async (eventName: string, handler: (...args: any) => void): Promise<void> => {
+    public onEvent = async (
+        eventName: string,
+        handler: (...args: any) => void,
+    ): Promise<void> => {
         if (!this.handlers.has(eventName)) {
             this.handlers.set(eventName, [])
         }
@@ -185,12 +207,13 @@ export class PackageService {
      * @returns The contract API (if found) or `null`.
      * @remarks Internal helper; not intended for direct use.
      */
-    private getContractAPI = async (): Promise<FireFlyContractAPIResponse | null> => {
-        const apis = await this.ff.getContractAPIs({
-            name: contractInterface.name,
-        })
-        return apis[0] || null
-    }
+    private getContractAPI =
+        async (): Promise<FireFlyContractAPIResponse | null> => {
+            const apis = await this.ff.getContractAPIs({
+                name: contractInterface.name,
+            })
+            return apis[0] || null
+        }
 
     /**
      * Creates the contract API in FireFly if it does not exist.
@@ -264,19 +287,21 @@ export class PackageService {
      * @param id FireFly data ID.
      * @returns The data record (if found) or `null` if missing/errored.
      */
-    public getLocalPackage = async (id: string): Promise<FireFlyDataResponse | null> => {
+    public getLocalPackage = async (
+        id: string,
+    ): Promise<FireFlyDataResponse | null> => {
         const res = await this.ff.getData(id)
         return res || null
     }
 
     public uploadPackage = async (pkg: PackageDetailsWithId) => {
         const res = await this.ff.uploadData({
-            datatype: { 
-                name: PACKAGE_DETAILS_DT_NAME, 
-                version: PACKAGE_DETAILS_DT_VERSION 
+            datatype: {
+                name: PACKAGE_DETAILS_DT_NAME,
+                version: PACKAGE_DETAILS_DT_VERSION,
             },
             id: pkg.id,
-            value: pkg
+            value: pkg,
         })
         return res
     }
@@ -329,7 +354,7 @@ export class PackageService {
         )
 
         if (!res.error && broadcast) {
-            this.uploadPackage({...packageDetails, id: externalId})
+            this.uploadPackage({ ...packageDetails, id: externalId })
         }
 
         return res
@@ -338,10 +363,13 @@ export class PackageService {
     /**
      * Updates the **status** of an existing package.
      * @param externalId Package external ID.
-     * @param status New {@link Status}.    
+     * @param status New {@link Status}.
      * @returns FireFly invocation response.
      */
-    public updatePackageStatus = async (externalId: string, status: Status): Promise<FireFlyContractInvokeResponse> => {
+    public updatePackageStatus = async (
+        externalId: string,
+        status: Status,
+    ): Promise<FireFlyContractInvokeResponse> => {
         const res = await this.ff.invokeContractAPI(
             contractInterface.name,
             "UpdatePackageStatus",
@@ -359,7 +387,9 @@ export class PackageService {
      * @param externalId Package external ID.
      * @returns The {@link BlockchainPackage}.
      */
-    public readBlockchainPackage = async (externalId: string): Promise<BlockchainPackage> => {
+    public readBlockchainPackage = async (
+        externalId: string,
+    ): Promise<BlockchainPackage> => {
         const res = await this.ff.queryContractAPI(
             contractInterface.name,
             "ReadBlockchainPackage",
@@ -391,13 +421,15 @@ export class PackageService {
 
         return res
     }
-    
+
     /**
      * Deletes a package from the ledger. You can only delete packages that you own and that are in a deletable state.
      * @param externalId Package external ID.
      * @returns FireFly invocation response.
      */
-    public deletePackage = async (externalId: string): Promise<FireFlyContractInvokeResponse> => {
+    public deletePackage = async (
+        externalId: string,
+    ): Promise<FireFlyContractInvokeResponse> => {
         const res = await this.ff.invokeContractAPI(
             contractInterface.name,
             "DeletePackage",
@@ -508,7 +540,7 @@ export class PackageService {
      *
      * @param externalId Package external ID.
      * @param termsId Transfer terms ID.
-     * @param storeObject The same data passed in CreatePackage, including salt, PII, and packageDetails. For integrity verification 
+     * @param storeObject The same data passed in CreatePackage, including salt, PII, and packageDetails. For integrity verification
      * and transfer of data to the new owner.
      * @returns FireFly invocation response.
      */

@@ -1,4 +1,8 @@
-import { PackagePII, Status, Urgency } from "./lib/services/package/types.common"
+import {
+    PackagePII,
+    Status,
+    Urgency,
+} from "./lib/services/package/types.common"
 import FireFly, { FireFlyOptionsInput } from "@hyperledger/firefly-sdk"
 import { PackageService } from "./lib/services/package/PackageService"
 import crypto, { randomUUID } from "crypto"
@@ -55,7 +59,6 @@ const main = async () => {
         console.log("=================================")
         console.log(args)
         console.log("=================================")
-
     })
 
     const salt = crypto.randomBytes(16).toString("hex")
@@ -70,11 +73,11 @@ const main = async () => {
     const res2 = await org1PkgService.readBlockchainPackage(packageID)
     console.log(res2)
 
-    const res3 = await org1PkgService.updatePackageStatus(
-        packageID,
-        Status.READY_FOR_PICKUP,
-    )
-    console.log(res3)
+    // const res3 = await org1PkgService.updatePackageStatus(
+    //     packageID,
+    //     Status.READY_FOR_PICKUP,
+    // )
+    // console.log(res3)
 
     const res4 = await org1PkgService.readBlockchainPackage(packageID)
     console.log(res4)

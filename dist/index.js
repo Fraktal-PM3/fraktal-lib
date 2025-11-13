@@ -96,8 +96,11 @@ const main = async () => {
     console.log(res1);
     const res2 = await org1PkgService.readBlockchainPackage(packageID);
     console.log(res2);
-    const res3 = await org1PkgService.updatePackageStatus(packageID, types_common_1.Status.READY_FOR_PICKUP);
-    console.log(res3);
+    // const res3 = await org1PkgService.updatePackageStatus(
+    //     packageID,
+    //     Status.READY_FOR_PICKUP,
+    // )
+    // console.log(res3)
     const res4 = await org1PkgService.readBlockchainPackage(packageID);
     console.log(res4);
     const res5 = await org1PkgService.readPackageDetailsAndPII(packageID);

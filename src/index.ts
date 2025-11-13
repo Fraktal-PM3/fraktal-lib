@@ -120,4 +120,7 @@ const main = async () => {
     // console.log(res5)
 }
 
-main()
+// Only run main when this file is executed directly (not imported)
+if (require.main === module) {
+    main()
+}

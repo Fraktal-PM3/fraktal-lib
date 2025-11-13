@@ -373,6 +373,24 @@ export class PackageService {
     }
 
     /**
+     * Checks if a package exists on-chain.
+     * @param externalId Package external ID.
+     * @returns `true` if the package exists; otherwise `false`.
+     */
+    public packageExists = async (externalId: string): Promise<boolean> => {
+        const res = await this.ff.queryContractAPI(
+            contractInterface.name,
+            "PackageExists",
+            {
+                input: { externalId },
+            },
+            { confirm: true, publish: true },
+        )
+
+        return res as unknown as boolean
+    }
+
+    /**
      * Reads the **private** package details and PII visible to the caller’s org.
      * @param externalId Package external ID.
      * @returns Implementation-specific object with details + PII.
@@ -408,6 +426,28 @@ export class PackageService {
         )
 
         return res
+    }
+
+    /**
+     * Verifies that the private package details and PII hash matches the expected hash.
+     * @param externalId Package external ID.
+     * @param expectedHash Expected SHA256 hex hash.
+     * @returns `true` if the hash matches; otherwise `false`.
+     */
+    public checkPackageDetailsAndPIIHash = async (
+        externalId: string,
+        expectedHash: string,
+    ): Promise<boolean> => {
+        const res = await this.ff.queryContractAPI(
+            contractInterface.name,
+            "CheckPackageDetailsAndPIIHash",
+            {
+                input: { externalId, expectedHash },
+            },
+            { confirm: true, publish: true },
+        )
+
+        return res as unknown as boolean
     }
 
     /**
@@ -458,38 +498,68 @@ export class PackageService {
     }
 
     /**
+     * Reads the public transfer terms for a given terms ID.
+     * @param termsId Transfer terms identifier.
+     * @returns The transfer terms as a JSON string.
+     */
+    public readTransferTerms = async (
+        termsId: string,
+    ): Promise<FireFlyContractQueryResponse> => {
+        const res = await this.ff.queryContractAPI(
+            contractInterface.name,
+            "ReadTransferTerms",
+            {
+                input: { termsId },
+            },
+            { confirm: true, publish: true },
+        )
+
+        return res
+    }
+
+    /**
+     * Reads the private transfer terms for a given terms ID.
+     * Only the recipient organization (toMSP) can read their private terms.
+     * @param termsId Transfer terms identifier.
+     * @returns The private transfer terms as a JSON string.
+     */
+    public readPrivateTransferTerms = async (
+        termsId: string,
+    ): Promise<FireFlyContractQueryResponse> => {
+        const res = await this.ff.queryContractAPI(
+            contractInterface.name,
+            "ReadPrivateTransferTerms",
+            {
+                input: { termsId },
+            },
+            { confirm: true, publish: true },
+        )
+
+        return res
+    }
+
+    /**
      * Accepts a previously proposed transfer.
      *
-     * Hashes `{ packageDetails, pii, salt }` using `sha256` (with deterministic
-     * stringify and sorted keys) and submits the hash for integrity verification.
+     * The chaincode internally verifies the package details and PII hash
+     * by calling CheckPackageDetailsAndPIIHash. The caller must provide
+     * the private transfer terms via transient map for verification.
      *
      * @param externalId Package external ID.
      * @param termsId Identifier of the terms being accepted.
-     * @param packageDetails Public package metadata used in integrity hash.
-     * @param pii Private information used in integrity hash.
-     * @param salt The same salt used/recorded off-chain for reproducible hashing.
      * @param privateTransferTerms Private fields (e.g., `price`) sent via `transientMap`.
      * @returns FireFly invocation response.
      */
     public acceptTransfer = async (
         externalId: string,
         termsId: string,
-        packageDetails: PackageDetails,
-        pii: PackagePII,
-        salt: string,
         privateTransferTerms: { price: number },
     ): Promise<FireFlyContractInvokeResponse> => {
-        // hash the package details and PII to ensure integrity
-        const packageDetailsAndPIIHash = crypto
-            .createHash("sha256")
-            .update(stringify(sortKeysRecursive({ packageDetails, pii, salt })))
-            .digest("hex")
-
         const res = await this.ff.invokeContractAPI(
             contractInterface.name,
             "AcceptTransfer",
             {
-                input: { externalId, termsId, packageDetailsAndPIIHash },
+                input: { externalId, termsId },
                 options: {
                     transientMap: {
                         privateTransferTerms:

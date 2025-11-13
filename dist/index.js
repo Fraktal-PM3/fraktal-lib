@@ -111,7 +111,7 @@ const main = async () => {
     };
     const res6 = await org1PkgService.proposeTransfer(packageID, "Org2MSP", terms, new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString());
     console.log(res6);
-    const res7 = await org2PkgService.acceptTransfer(packageID, terms.id, packageDetails, pii, salt, { price: terms.price });
+    const res7 = await org2PkgService.acceptTransfer(packageID, terms.id, { price: terms.price });
     console.log(res7);
     const res8 = await org1PkgService.executeTransfer(packageID, terms.id, {
         salt,

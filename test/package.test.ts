@@ -76,13 +76,122 @@ describe("PackageService tests", () => {
                 expect(response.namespace).toBe(FF_NAMESPACE)
             },
             BLOCKCHAIN_TIMEOUT,
+        ) // Maybe add off-chain data verification here? Or verify on chain data in other tests instead
+    })
+    describe("updatePackageStatus", () => {
+        it(
+            "should update package status after transfer proposal",
+            async () => {
+                const updateTestPackageId = randomUUID()
+                const updateTestSalt = randomBytes(32).toString("hex")
+
+                await org1PkgService.createPackage(
+                    updateTestPackageId,
+                    packageDetails,
+                    pii,
+                    updateTestSalt,
+                    true,
+                )
+
+                const terms = {
+                    id: randomUUID(),
+                    price: 100,
+                }
+                await org1PkgService.proposeTransfer(
+                    updateTestPackageId,
+                    "Org2MSP",
+                    terms,
+                    new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // expiryISO
+                )
+
+                const response = await org1PkgService.updatePackageStatus(
+                    updateTestPackageId,
+                    Status.READY_FOR_PICKUP,
+                )
+                expect(response).toBeDefined()
+                expect(response.error).toBeUndefined()
+                expect(response.status).toBe("Succeeded")
+                expect(response.id).toMatch(/^[a-f0-9-]+$/)
+                expect(response.namespace).toBe(FF_NAMESPACE)
+
+                // Verify the status was actually updated on-chain
+                const pkg =
+                    await org1PkgService.readBlockchainPackage(
+                        updateTestPackageId,
+                    )
+                expect(pkg.status).toBe(Status.READY_FOR_PICKUP)
+            },
+            BLOCKCHAIN_TIMEOUT,
         )
     })
-    describe.skip("updatePackageStatus", () => {
-        it("should update package status successfully", async () => {})
+    describe("readBlockchainPackage", () => {
+        it(
+            "should read package from blockchain",
+            async () => {
+                const readTestPackageId = randomUUID()
+                const readTestSalt = randomBytes(32).toString("hex")
+
+                await org1PkgService.createPackage(
+                    readTestPackageId,
+                    packageDetails,
+                    pii,
+                    readTestSalt,
+                    true,
+                )
+
+                const pkg =
+                    await org1PkgService.readBlockchainPackage(
+                        readTestPackageId,
+                    )
+
+                expect(pkg).toBeDefined()
+                expect(pkg.externalId).toBe(readTestPackageId)
+                expect(pkg.status).toBe(Status.PENDING)
+                expect(pkg.ownerOrgMSP).toBeDefined()
+                expect(pkg.packageDetailsHash).toBeDefined()
+                expect(pkg.packageDetailsHash).toMatch(/^[a-f0-9]+$/) // Hash should be hex string
+            },
+            BLOCKCHAIN_TIMEOUT,
+        )
     })
-    describe.skip("readBlockchainPackage", () => {})
-    describe.skip("readPackageDetailsAndPII", () => {})
+    describe("readPackageDetailsAndPII", () => {
+        it(
+            "should read private package details and PII",
+            async () => {
+                const privateTestPackageId = randomUUID()
+                const privateTestSalt = randomBytes(32).toString("hex")
+
+                await org1PkgService.createPackage(
+                    privateTestPackageId,
+                    packageDetails,
+                    pii,
+                    privateTestSalt,
+                    true,
+                )
+
+                const result =
+                    await org1PkgService.readPackageDetailsAndPII(
+                        privateTestPackageId,
+                    )
+
+                expect(result).toBeDefined()
+
+                expect(result).toBeDefined()
+                expect(result.salt).toBe(privateTestSalt)
+                expect(result.pii).toEqual(pii)
+                expect(result.packageDetails).toEqual(packageDetails)
+            },
+            BLOCKCHAIN_TIMEOUT,
+        )
+
+        it.skip(
+            "should fail when reading private data from non-owner org",
+            async () => {
+                // test would require a second organization setup
+            },
+            BLOCKCHAIN_TIMEOUT,
+        )
+    })
     describe.skip("deletePackage", () => {})
     describe.skip("proposeTransfer", () => {})
     describe.skip("acceptTransfer", () => {})

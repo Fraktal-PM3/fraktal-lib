@@ -230,25 +230,32 @@ export default class PackageService {
     }
 
     public proposeTransfer = async (
-        externalId: string,  
-        toMSP: string, 
-        terms: { price: number, id: string }, 
-        expiryISO?: string
+        externalId: string,
+        toMSP: string,
+        terms: { price: number; id: string; salt: string },
+        expiryISO?: string,
     ) => {
         const createdISO = new Date().toISOString()
-        
+
         const res = await this.ff.invokeContractAPI(
             contractInterface.name,
             "ProposeTransfer",
             {
-                input: { externalId, termsId: terms.id, toMSP, createdISO, expiryISO },
+                input: {
+                    externalId,
+                    termsId: terms.id,
+                    toMSP,
+                    createdISO,
+                    expiryISO,
+                },
                 options: {
                     transientMap: {
-                        privateTransferTerms: JSON.stringify({ 
-                            price: terms.price 
+                        privateTransferTerms: JSON.stringify({
+                            price: terms.price,
+                            salt: terms.salt,
                         }),
-                    }
-                }
+                    },
+                },
             },
             { confirm: true, publish: true },
         )
@@ -257,12 +264,12 @@ export default class PackageService {
     }
 
     public acceptTransfer = async (
-        externalId: string, 
-        termsId: string, 
-        packageDetails: PackageDetails, 
-        pii: PackagePII, 
-        salt: string, 
-        privateTransferTerms: { price: number }
+        externalId: string,
+        termsId: string,
+        packageDetails: PackageDetails,
+        pii: PackagePII,
+        salt: string,
+        privateTransferTerms: { price: number; salt: string },
     ) => {
         // hash the package details and PII to ensure integrity
         const packageDetailsAndPIIHash = crypto
@@ -277,9 +284,23 @@ export default class PackageService {
                 input: { externalId, termsId, packageDetailsAndPIIHash },
                 options: {
                     transientMap: {
-                        privateTransferTerms: JSON.stringify(privateTransferTerms)
-                    }
-                }
+                        privateTransferTerms:
+                            JSON.stringify(privateTransferTerms),
+                    },
+                },
+            },
+            { confirm: true, publish: true },
+        )
+
+        return res
+    }
+
+    public readPrivateTransferTerms = async (termsId: string): Promise<any> => {
+        const res = await this.ff.queryContractAPI(
+            contractInterface.name,
+            "ReadPrivateTransferTerms",
+            {
+                input: { termsId },
             },
             { confirm: true, publish: true },
         )

@@ -1,4 +1,8 @@
-import { PackagePII, Status, Urgency } from "./lib/services/package/types.common"
+import {
+    PackagePII,
+    Status,
+    Urgency,
+} from "./lib/services/package/types.common"
 import FabconnectService from "./lib/services/fabconnect/FabconnectService"
 import FireFly, { FireFlyOptionsInput } from "@hyperledger/firefly-sdk"
 import PackageService from "./lib/services/package/PackageService"
@@ -53,39 +57,59 @@ const main = async () => {
         packageID,
         packageDetails,
         pii,
-        salt
+        salt,
     )
     console.log(res1)
 
     const res2 = await org1PkgService.readBlockchainPackage(packageID)
     console.log(res2)
 
-    const res3 = await org1PkgService.updatePackageStatus(
-        packageID,
-        Status.READY_FOR_PICKUP,
-    )
-    console.log(res3)
-
     const res4 = await org1PkgService.readBlockchainPackage(packageID)
     console.log(res4)
-    
+
     const res5 = await org1PkgService.readPackageDetailsAndPII(packageID)
     console.log("PII", res5)
+
+    const transferSalt = crypto.randomBytes(16).toString("hex")
 
     const terms = {
         id: randomUUID(),
         price: 100,
+        salt: transferSalt,
     }
 
-    const res6 = await org1PkgService.proposeTransfer(packageID, "Org2MSP", terms, new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString())
-    console.log(res6)
+    const res6 = await org1PkgService.proposeTransfer(
+        packageID,
+        "Org2MSP",
+        terms,
+        new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    )
+    console.log("ProposeTransfer result:", res6)
 
-    const res7 = await org2PkgService.acceptTransfer(packageID, terms.id, packageDetails, pii, salt, { price: terms.price })
-    console.log(res7)
+    const res7 = await org2PkgService.acceptTransfer(
+        packageID,
+        terms.id,
+        packageDetails,
+        pii,
+        salt,
+        { price: terms.price, salt: terms.salt },
+    )
+    console.log("AcceptTransfer result:", res7)
 
-    // expect error since package is not in a deletable state
-    // const res5 = await org1PkgService.deletePackage(packageID)
-    // console.log(res5)
+    const res8 = await org2PkgService.readPrivateTransferTerms(terms.id)
+    console.log(res8)
+
+    const res9 = await org1PkgService.deletePackage(packageID)
+    console.log(res9)
+
+    const res10 = await org1PkgService.readPackageDetailsAndPII(packageID)
+    console.log(res10)
+
+    const res11 = await org1PkgService.readBlockchainPackage(packageID)
+    console.log(res11)
+
+    const res12 = await org2PkgService.readPrivateTransferTerms(terms.id)
+    console.log(res12)
 }
 
 main()

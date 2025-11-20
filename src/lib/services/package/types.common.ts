@@ -39,6 +39,7 @@ export enum TransferStatus {
 export type PackagePII = { [key: string]: any }
 
 export type PrivateTransferTerms = {
+    salt: string
     price: number
 }
 
@@ -72,4 +73,3 @@ export type BlockchainPackage = {
 }
 
 export type PackageDetailsWithId = PackageDetails & { id: string }
-

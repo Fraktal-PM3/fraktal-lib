@@ -96,15 +96,6 @@ const main = async () => {
         console.log(args);
         console.log("=================================");
     });
-    org1FF.sendPrivateMessage({
-        header: {},
-        group: {
-            members: [{ identity: "did:firefly:org/org_096cc0" }],
-        },
-        data: [
-            { value: "This is a message" },
-        ],
-    });
     const salt = crypto_1.default.randomBytes(16).toString("hex");
     const res1 = await org1PkgService.createPackage(packageID, packageDetails, pii, salt);
     console.log(res1);

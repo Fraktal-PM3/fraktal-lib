@@ -96,6 +96,15 @@ const main = async () => {
         console.log(args);
         console.log("=================================");
     });
+    org1FF.sendPrivateMessage({
+        header: {},
+        group: {
+            members: [{ identity: "did:firefly:org/org_76043d" }],
+        },
+        data: [
+            { value: "This is a message" },
+        ],
+    });
     const salt = crypto_1.default.randomBytes(16).toString("hex");
     const res1 = await org1PkgService.createPackage(packageID, packageDetails, pii, salt);
     console.log(res1);
@@ -116,7 +125,7 @@ const main = async () => {
     };
     const res6 = await org1PkgService.proposeTransfer(packageID, "Org2MSP", terms, new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString());
     console.log(res6);
-    const res7 = await org2PkgService.acceptTransfer(packageID, terms.id, { price: terms.price });
+    const res7 = await org2PkgService.acceptTransfer(packageID, terms.id, packageDetails, pii, salt, { price: 100 });
     console.log(res7);
     const res8 = await org1PkgService.executeTransfer(packageID, terms.id, {
         salt,

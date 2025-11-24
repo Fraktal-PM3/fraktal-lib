@@ -68,6 +68,17 @@ const main = async () => {
         console.log("=================================")
         
     })
+
+    org1FF.sendPrivateMessage({
+        header: {},
+        group: {
+            members: [{ identity: "did:firefly:org/org_76043d" }],
+        },
+        data: [
+          { value: "This is a message" },
+        ],
+    })
+
     const salt = crypto.randomBytes(16).toString("hex")
     const res1 = await org1PkgService.createPackage(
         packageID,
@@ -108,7 +119,10 @@ const main = async () => {
     const res7 = await org2PkgService.acceptTransfer(
         packageID,
         terms.id,
-        { price: terms.price },
+        packageDetails,
+        pii,
+        salt,
+        { price: 100 },
     )
     console.log(res7)
 

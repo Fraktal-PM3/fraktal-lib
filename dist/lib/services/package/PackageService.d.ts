@@ -238,9 +238,22 @@ export declare class PackageService {
      * @param privateTransferTerms Private fields (e.g., `price`) sent via `transientMap`.
      * @returns FireFly invocation response.
      */
-    acceptTransfer: (externalId: string, termsId: string, privateTransferTerms: {
+    acceptTransfer: (externalId: string, termsId: string, packageDetails: PackageDetails, pii: PackagePII, salt: string, privateTransferTerms: {
         price: number;
-    }) => Promise<FireFlyContractInvokeResponse>;
+    }) => Promise<Required<{
+        created?: string;
+        error?: string;
+        id?: string;
+        input?: any;
+        namespace?: string;
+        output?: any;
+        plugin?: string;
+        retry?: string;
+        status?: string;
+        tx?: string;
+        type?: "blockchain_pin_batch" | "blockchain_network_action" | "blockchain_deploy" | "blockchain_invoke" | "sharedstorage_upload_batch" | "sharedstorage_upload_blob" | "sharedstorage_upload_value" | "sharedstorage_download_batch" | "sharedstorage_download_blob" | "dataexchange_send_batch" | "dataexchange_send_blob" | "token_create_pool" | "token_activate_pool" | "token_transfer" | "token_approval";
+        updated?: string;
+    }>>;
     /**
      * Executes a confirmed transfer (finalization step).
      *

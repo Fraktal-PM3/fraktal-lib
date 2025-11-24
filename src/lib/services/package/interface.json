@@ -242,7 +242,7 @@
             {
                 "name": "AcceptTransfer",
                 "pathname": "",
-                "description": "Accept a transfer for a package. Only the recipient org (toMSP) may accept. Requires matching 'privateTransferTerms' in transient, and internally verifies packageDetailsAndPIIHash.",
+                "description": "Accept a transfer for a package. Only the recipient org (toMSP) may accept. Requires matching 'privateTransferTerms' in transient, and a verified packageDetailsAndPIIHash.",
                 "params": [
                     {
                         "name": "externalId",
@@ -252,6 +252,12 @@
                     },
                     {
                         "name": "termsId",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "packageDetailsAndPIIHash",
                         "schema": {
                             "type": "string"
                         }

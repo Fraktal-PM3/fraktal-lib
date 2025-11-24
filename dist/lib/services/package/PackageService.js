@@ -5,7 +5,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PackageService = void 0;
 const package_1 = require("../../datatypes/package");
+const json_stringify_deterministic_1 = __importDefault(require("json-stringify-deterministic"));
+const sort_keys_recursive_1 = __importDefault(require("sort-keys-recursive"));
 const interface_json_1 = __importDefault(require("./interface.json"));
+const crypto_1 = __importDefault(require("crypto"));
 /**
  * High-level API for interacting with blockchain-based package management via Hyperledger FireFly.
  *
@@ -90,7 +93,6 @@ class PackageService {
                     confirm: true,
                 });
             });
-            // this.ff.listen({ filter: { events: "message_" } })
             this.ff.listen({ filter: { events: "message_confirmed" }, options: { withData: true } }, async (_socket, event) => {
                 // @ts-ignore
                 const msg = event.message;
@@ -429,9 +431,14 @@ class PackageService {
          * @param privateTransferTerms Private fields (e.g., `price`) sent via `transientMap`.
          * @returns FireFly invocation response.
          */
-        this.acceptTransfer = async (externalId, termsId, privateTransferTerms) => {
+        this.acceptTransfer = async (externalId, termsId, packageDetails, pii, salt, privateTransferTerms) => {
+            // hash the package details and PII to ensure integrity
+            const packageDetailsAndPIIHash = crypto_1.default
+                .createHash("sha256")
+                .update((0, json_stringify_deterministic_1.default)((0, sort_keys_recursive_1.default)({ packageDetails, pii, salt })))
+                .digest("hex");
             const res = await this.ff.invokeContractAPI(interface_json_1.default.name, "AcceptTransfer", {
-                input: { externalId, termsId },
+                input: { externalId, termsId, packageDetailsAndPIIHash },
                 options: {
                     transientMap: {
                         privateTransferTerms: JSON.stringify(privateTransferTerms),

@@ -90,6 +90,17 @@ class PackageService {
                     confirm: true,
                 });
             });
+            // this.ff.listen({ filter: { events: "message_" } })
+            this.ff.listen({ filter: { events: "message_confirmed" }, options: { withData: true } }, async (_socket, event) => {
+                // @ts-ignore
+                const msg = event.message;
+                for (const d of msg.data) {
+                    const full = await this.ff.getData(d.id);
+                    if (full?.validator == "json") {
+                        this.handlers.get("message")?.forEach(handler => handler(full));
+                    }
+                }
+            });
             this.ff.listen({ filter: { events: "blockchain_event" }, options: { withData: true } }, async (_socket, event) => {
                 const { blockchainEvent } = event;
                 if (!blockchainEvent?.name)

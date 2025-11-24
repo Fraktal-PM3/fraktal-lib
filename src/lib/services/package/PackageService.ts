@@ -1,4 +1,4 @@
-import FireFly, { FireFlyContractAPIResponse, FireFlyContractInterfaceResponse, FireFlyContractInvokeResponse, FireFlyContractQueryResponse, FireFlyDataResponse, FireFlyDatatypeResponse, FireFlyEventDelivery } from "@hyperledger/firefly-sdk"
+import FireFly, { FireFlyContractAPIResponse, FireFlyContractInterfaceResponse, FireFlyContractInvokeResponse, FireFlyContractQueryResponse, FireFlyDataResponse, FireFlyDatatypeResponse, FireFlyEventBatchDelivery, FireFlyEventDelivery } from "@hyperledger/firefly-sdk"
 import { PACKAGE_DETAILS_DT_NAME, PACKAGE_DETAILS_DT_VERSION, packageDetailsDatatypePayload } from "../../datatypes/package"
 import stringify from "json-stringify-deterministic"
 import sortKeysRecursive from "sort-keys-recursive"
@@ -113,6 +113,18 @@ export class PackageService {
                     confirm: true,
                 },
             )
+        })
+
+        // this.ff.listen({ filter: { events: "message_" } })
+        this.ff.listen({ filter: { events: "message_confirmed" }, options: { withData: true } }, async (_socket, event) => {
+            // @ts-ignore
+            const msg = event.message
+            for (const d of msg.data) {
+                const full = await this.ff.getData(d.id)
+                if (full?.validator == "json") {
+                    this.handlers.get("message")?.forEach(handler => handler(full))
+                }
+            }
         })
 
         this.ff.listen({ filter: { events: "blockchain_event" }, options: { withData: true } }, async (_socket, event) => {

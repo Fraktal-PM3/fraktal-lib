@@ -186,4 +186,11 @@ res: {
     txid: string | undefined;
     output: any;
     timestamp: string;
+} | {
+    id: string;
+    validator: string;
+    namespace: string;
+    hash: string;
+    created: string;
+    value: any;
 }) => void;

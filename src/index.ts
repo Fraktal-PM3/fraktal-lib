@@ -1,4 +1,8 @@
-import { PackagePII, Status, Urgency } from "./lib/services/package/types.common"
+import {
+    PackagePII,
+    Status,
+    Urgency,
+} from "./lib/services/package/types.common"
 import FireFly, { FireFlyOptionsInput } from "@hyperledger/firefly-sdk"
 import { PackageService } from "./lib/services/package/PackageService"
 import crypto, { randomUUID } from "crypto"
@@ -51,11 +55,28 @@ const main = async () => {
         name: "John Doe",
     }
 
+    
+    org2PkgService.onEvent("message", (args: any) => {
+        console.log("=============MESSAGE=============")
+        console.log(args)
+        console.log("=================================")
+    })
+
     org2PkgService.onEvent("CreatePackage", (args: any) => {
         console.log("=================================")
         console.log(args)
         console.log("=================================")
+        
+    })
 
+    org1FF.sendPrivateMessage({
+        header: {},
+        group: {
+            members: [{ identity: "did:firefly:org/org_76043d" }],
+        },
+        data: [
+          { value: "This is a message" },
+        ],
     })
 
     const salt = crypto.randomBytes(16).toString("hex")
@@ -70,11 +91,11 @@ const main = async () => {
     const res2 = await org1PkgService.readBlockchainPackage(packageID)
     console.log(res2)
 
-    const res3 = await org1PkgService.updatePackageStatus(
-        packageID,
-        Status.READY_FOR_PICKUP,
-    )
-    console.log(res3)
+    // const res3 = await org1PkgService.updatePackageStatus(
+    //     packageID,
+    //     Status.READY_FOR_PICKUP,
+    // )
+    // console.log(res3)
 
     const res4 = await org1PkgService.readBlockchainPackage(packageID)
     console.log(res4)
@@ -101,7 +122,7 @@ const main = async () => {
         packageDetails,
         pii,
         salt,
-        { price: terms.price },
+        { price: 100 },
     )
     console.log(res7)
 
@@ -117,4 +138,7 @@ const main = async () => {
     // console.log(res5)
 }
 
-main()
+// Only run main when this file is executed directly (not imported)
+if (require.main === module) {
+    main()
+}

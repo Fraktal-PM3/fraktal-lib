@@ -16,9 +16,9 @@ export type Location = {
     /** Human-readable street address. */
     address: string;
     /** Latitude in decimal degrees (WGS84). */
-    lat: number;
+    lat?: number;
     /** Longitude in decimal degrees (WGS84). */
-    lng: number;
+    lng?: number;
 };
 /**
  * How urgent a delivery is.
@@ -52,7 +52,9 @@ export declare enum Status {
     /** Business process completed successfully. */
     SUCCEEDED = "succeeded",
     /** Business process failed (irrecoverable). */
-    FAILED = "failed"
+    FAILED = "failed",
+    /** Transfer has been proposed. */
+    PROPOSED = "proposed"
 }
 /**
  * Status of a transfer proposal between organizations.
@@ -164,7 +166,7 @@ export type BlockchainPackage = {
      * @remarks
      * Enables integrity checks without disclosing private content.
      */
-    packageDetailsHash: string;
+    packageDetailsAndPIIHash: string;
 };
 /**
  * Convenience type: public package details with a system-assigned identifier.
@@ -186,4 +188,11 @@ res: {
     txid: string | undefined;
     output: any;
     timestamp: string;
+} | {
+    id: string;
+    validator: string;
+    namespace: string;
+    hash: string;
+    created: string;
+    value: any;
 }) => void;

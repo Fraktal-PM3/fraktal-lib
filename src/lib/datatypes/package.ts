@@ -33,7 +33,7 @@ export const PackageDetailsSchema2020 = {
                 lat: { type: "number" },
                 lng: { type: "number" },
             },
-            required: ["address", "lat", "lng"],
+            required: ["address"],
             additionalProperties: false,
         },
         Size: {

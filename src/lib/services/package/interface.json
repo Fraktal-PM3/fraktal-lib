@@ -88,7 +88,8 @@
                                 "in_transit",
                                 "delivered",
                                 "succeeded",
-                                "failed"
+                                "failed",
+                                "proposed"
                             ]
                         }
                     }
@@ -304,7 +305,8 @@
                                 "in_transit",
                                 "delivered",
                                 "succeeded",
-                                "failed"
+                                "failed",
+                                "proposed"
                             ]
                         }
                     }
@@ -328,7 +330,8 @@
                                 "in_transit",
                                 "delivered",
                                 "succeeded",
-                                "failed"
+                                "failed",
+                                "proposed"
                             ]
                         }
                     }
@@ -377,7 +380,7 @@
                 }
             },
             {
-                "name": "ExecuteTransfer",
+                "name": "TransferExecuted",
                 "description": "Emitted when a transfer is executed",
                 "details": {
                     "type": "object",

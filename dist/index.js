@@ -86,18 +86,35 @@ const main = async () => {
     const pii = {
         name: "John Doe",
     };
+    org2PkgService.onEvent("message", (args) => {
+        console.log("=============MESSAGE=============");
+        console.log(args);
+        console.log("=================================");
+    });
     org2PkgService.onEvent("CreatePackage", (args) => {
         console.log("=================================");
         console.log(args);
         console.log("=================================");
+    });
+    org1FF.sendPrivateMessage({
+        header: {},
+        group: {
+            members: [{ identity: "did:firefly:org/org_76043d" }],
+        },
+        data: [
+            { value: "This is a message" },
+        ],
     });
     const salt = crypto_1.default.randomBytes(16).toString("hex");
     const res1 = await org1PkgService.createPackage(packageID, packageDetails, pii, salt);
     console.log(res1);
     const res2 = await org1PkgService.readBlockchainPackage(packageID);
     console.log(res2);
-    const res3 = await org1PkgService.updatePackageStatus(packageID, types_common_1.Status.READY_FOR_PICKUP);
-    console.log(res3);
+    // const res3 = await org1PkgService.updatePackageStatus(
+    //     packageID,
+    //     Status.READY_FOR_PICKUP,
+    // )
+    // console.log(res3)
     const res4 = await org1PkgService.readBlockchainPackage(packageID);
     console.log(res4);
     const res5 = await org1PkgService.readPackageDetailsAndPII(packageID);
@@ -108,7 +125,7 @@ const main = async () => {
     };
     const res6 = await org1PkgService.proposeTransfer(packageID, "Org2MSP", terms, new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString());
     console.log(res6);
-    const res7 = await org2PkgService.acceptTransfer(packageID, terms.id, packageDetails, pii, salt, { price: terms.price });
+    const res7 = await org2PkgService.acceptTransfer(packageID, terms.id, packageDetails, pii, salt, { price: 100 });
     console.log(res7);
     const res8 = await org1PkgService.executeTransfer(packageID, terms.id, {
         salt,
@@ -120,5 +137,8 @@ const main = async () => {
     // const res5 = await org1PkgService.deletePackage(packageID)
     // console.log(res5)
 };
-main();
+// Only run main when this file is executed directly (not imported)
+if (require.main === module) {
+    main();
+}
 //# sourceMappingURL=index.js.map

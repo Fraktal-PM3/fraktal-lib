@@ -93,10 +93,17 @@ class PackageService {
                     confirm: true,
                 });
             });
-            this.ff.listen({
-                filter: { events: "blockchain_event" },
-                options: { withData: true },
-            }, async (_socket, event) => {
+            this.ff.listen({ filter: { events: "message_confirmed" }, options: { withData: true } }, async (_socket, event) => {
+                // @ts-ignore
+                const msg = event.message;
+                for (const d of msg.data) {
+                    const full = await this.ff.getData(d.id);
+                    if (full?.validator == "json") {
+                        this.handlers.get("message")?.forEach(handler => handler(full));
+                    }
+                }
+            });
+            this.ff.listen({ filter: { events: "blockchain_event" }, options: { withData: true } }, async (_socket, event) => {
                 const { blockchainEvent } = event;
                 if (!blockchainEvent?.name)
                     return;
@@ -311,6 +318,17 @@ class PackageService {
             return res;
         };
         /**
+         * Checks if a package exists on-chain.
+         * @param externalId Package external ID.
+         * @returns `true` if the package exists; otherwise `false`.
+         */
+        this.packageExists = async (externalId) => {
+            const res = await this.ff.queryContractAPI(interface_json_1.default.name, "PackageExists", {
+                input: { externalId },
+            }, { confirm: true, publish: true });
+            return res;
+        };
+        /**
          * Reads the **private** package details and PII visible to the caller’s org.
          * @param externalId Package external ID.
          * @returns Implementation-specific object with details + PII.
@@ -329,6 +347,18 @@ class PackageService {
         this.deletePackage = async (externalId) => {
             const res = await this.ff.invokeContractAPI(interface_json_1.default.name, "DeletePackage", {
                 input: { externalId },
+            }, { confirm: true, publish: true });
+            return res;
+        };
+        /**
+         * Verifies that the private package details and PII hash matches the expected hash.
+         * @param externalId Package external ID.
+         * @param expectedHash Expected SHA256 hex hash.
+         * @returns `true` if the hash matches; otherwise `false`.
+         */
+        this.checkPackageDetailsAndPIIHash = async (externalId, expectedHash) => {
+            const res = await this.ff.queryContractAPI(interface_json_1.default.name, "CheckPackageDetailsAndPIIHash", {
+                input: { externalId, expectedHash },
             }, { confirm: true, publish: true });
             return res;
         };
@@ -367,16 +397,37 @@ class PackageService {
             return res;
         };
         /**
+         * Reads the public transfer terms for a given terms ID.
+         * @param termsId Transfer terms identifier.
+         * @returns The transfer terms as a JSON string.
+         */
+        this.readTransferTerms = async (termsId) => {
+            const res = await this.ff.queryContractAPI(interface_json_1.default.name, "ReadTransferTerms", {
+                input: { termsId },
+            }, { confirm: true, publish: true });
+            return res;
+        };
+        /**
+         * Reads the private transfer terms for a given terms ID.
+         * Only the recipient organization (toMSP) can read their private terms.
+         * @param termsId Transfer terms identifier.
+         * @returns The private transfer terms as a JSON string.
+         */
+        this.readPrivateTransferTerms = async (termsId) => {
+            const res = await this.ff.queryContractAPI(interface_json_1.default.name, "ReadPrivateTransferTerms", {
+                input: { termsId },
+            }, { confirm: true, publish: true });
+            return res;
+        };
+        /**
          * Accepts a previously proposed transfer.
          *
-         * Hashes `{ packageDetails, pii, salt }` using `sha256` (with deterministic
-         * stringify and sorted keys) and submits the hash for integrity verification.
+         * The chaincode internally verifies the package details and PII hash
+         * by calling CheckPackageDetailsAndPIIHash. The caller must provide
+         * the private transfer terms via transient map for verification.
          *
          * @param externalId Package external ID.
          * @param termsId Identifier of the terms being accepted.
-         * @param packageDetails Public package metadata used in integrity hash.
-         * @param pii Private information used in integrity hash.
-         * @param salt The same salt used/recorded off-chain for reproducible hashing.
          * @param privateTransferTerms Private fields (e.g., `price`) sent via `transientMap`.
          * @returns FireFly invocation response.
          */

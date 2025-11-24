@@ -171,6 +171,12 @@ export declare class PackageService {
      */
     readBlockchainPackage: (externalId: string) => Promise<BlockchainPackage>;
     /**
+     * Checks if a package exists on-chain.
+     * @param externalId Package external ID.
+     * @returns `true` if the package exists; otherwise `false`.
+     */
+    packageExists: (externalId: string) => Promise<boolean>;
+    /**
      * Reads the **private** package details and PII visible to the caller’s org.
      * @param externalId Package external ID.
      * @returns Implementation-specific object with details + PII.
@@ -182,6 +188,13 @@ export declare class PackageService {
      * @returns FireFly invocation response.
      */
     deletePackage: (externalId: string) => Promise<FireFlyContractInvokeResponse>;
+    /**
+     * Verifies that the private package details and PII hash matches the expected hash.
+     * @param externalId Package external ID.
+     * @param expectedHash Expected SHA256 hex hash.
+     * @returns `true` if the hash matches; otherwise `false`.
+     */
+    checkPackageDetailsAndPIIHash: (externalId: string, expectedHash: string) => Promise<boolean>;
     /**
      * Proposes a transfer to another organization.
      *
@@ -201,22 +214,46 @@ export declare class PackageService {
         id: string;
     }, expiryISO?: string) => Promise<FireFlyContractInvokeResponse>;
     /**
+     * Reads the public transfer terms for a given terms ID.
+     * @param termsId Transfer terms identifier.
+     * @returns The transfer terms as a JSON string.
+     */
+    readTransferTerms: (termsId: string) => Promise<FireFlyContractQueryResponse>;
+    /**
+     * Reads the private transfer terms for a given terms ID.
+     * Only the recipient organization (toMSP) can read their private terms.
+     * @param termsId Transfer terms identifier.
+     * @returns The private transfer terms as a JSON string.
+     */
+    readPrivateTransferTerms: (termsId: string) => Promise<FireFlyContractQueryResponse>;
+    /**
      * Accepts a previously proposed transfer.
      *
-     * Hashes `{ packageDetails, pii, salt }` using `sha256` (with deterministic
-     * stringify and sorted keys) and submits the hash for integrity verification.
+     * The chaincode internally verifies the package details and PII hash
+     * by calling CheckPackageDetailsAndPIIHash. The caller must provide
+     * the private transfer terms via transient map for verification.
      *
      * @param externalId Package external ID.
      * @param termsId Identifier of the terms being accepted.
-     * @param packageDetails Public package metadata used in integrity hash.
-     * @param pii Private information used in integrity hash.
-     * @param salt The same salt used/recorded off-chain for reproducible hashing.
      * @param privateTransferTerms Private fields (e.g., `price`) sent via `transientMap`.
      * @returns FireFly invocation response.
      */
     acceptTransfer: (externalId: string, termsId: string, packageDetails: PackageDetails, pii: PackagePII, salt: string, privateTransferTerms: {
         price: number;
-    }) => Promise<FireFlyContractInvokeResponse>;
+    }) => Promise<Required<{
+        created?: string;
+        error?: string;
+        id?: string;
+        input?: any;
+        namespace?: string;
+        output?: any;
+        plugin?: string;
+        retry?: string;
+        status?: string;
+        tx?: string;
+        type?: "blockchain_pin_batch" | "blockchain_network_action" | "blockchain_deploy" | "blockchain_invoke" | "sharedstorage_upload_batch" | "sharedstorage_upload_blob" | "sharedstorage_upload_value" | "sharedstorage_download_batch" | "sharedstorage_download_blob" | "dataexchange_send_batch" | "dataexchange_send_blob" | "token_create_pool" | "token_activate_pool" | "token_transfer" | "token_approval";
+        updated?: string;
+    }>>;
     /**
      * Executes a confirmed transfer (finalization step).
      *

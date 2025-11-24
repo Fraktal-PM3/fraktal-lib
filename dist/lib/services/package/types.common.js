@@ -22,6 +22,8 @@ var Status;
 (function (Status) {
     /** Created but not yet ready for pickup. */
     Status["PENDING"] = "pending";
+    /** Transfer has been proposed to another organization. */
+    Status["PROPOSED"] = "proposed";
     /** Ready for pickup by the courier. */
     Status["READY_FOR_PICKUP"] = "ready_for_pickup";
     /** Courier has picked up the package. */

@@ -42,6 +42,8 @@ export enum Urgency {
 export enum Status {
     /** Created but not yet ready for pickup. */
     PENDING = "pending",
+    /** Transfer has been proposed to another organization. */
+    PROPOSED = "proposed",
     /** Ready for pickup by the courier. */
     READY_FOR_PICKUP = "ready_for_pickup",
     /** Courier has picked up the package. */
@@ -169,7 +171,7 @@ export type BlockchainPackage = {
     /** Current {@link Status}. */
     status: Status
     /**
-     * Hash of the package details (and possibly PII+salt, per implementation).
+     * Hash of the package details (and PII + salt).
      * @remarks
      * Enables integrity checks without disclosing private content.
      */

@@ -93,18 +93,21 @@ class PackageService {
                     confirm: true,
                 });
             });
-            this.ff.listen({ filter: { events: "blockchain_event" }, options: { withData: true } }, async (_socket, event) => {
+            this.ff.listen({
+                filter: { events: "blockchain_event" },
+                options: { withData: true },
+            }, async (_socket, event) => {
                 const { blockchainEvent } = event;
                 if (!blockchainEvent?.name)
                     return;
                 const handlers = this.handlers.get(blockchainEvent.name);
                 if (!handlers || handlers.length === 0)
                     return;
-                handlers.forEach(handler => {
+                handlers.forEach((handler) => {
                     handler({
                         output: blockchainEvent.output,
                         timestamp: blockchainEvent.timestamp,
-                        txid: blockchainEvent.tx.blockchainId
+                        txid: blockchainEvent.tx.blockchainId,
                     });
                 });
             });
@@ -238,10 +241,10 @@ class PackageService {
             const res = await this.ff.uploadData({
                 datatype: {
                     name: package_1.PACKAGE_DETAILS_DT_NAME,
-                    version: package_1.PACKAGE_DETAILS_DT_VERSION
+                    version: package_1.PACKAGE_DETAILS_DT_VERSION,
                 },
                 id: pkg.id,
-                value: pkg
+                value: pkg,
             });
             return res;
         };

@@ -39,6 +39,8 @@ export declare enum Urgency {
 export declare enum Status {
     /** Created but not yet ready for pickup. */
     PENDING = "pending",
+    /** Transfer has been proposed to another organization. */
+    PROPOSED = "proposed",
     /** Ready for pickup by the courier. */
     READY_FOR_PICKUP = "ready_for_pickup",
     /** Courier has picked up the package. */

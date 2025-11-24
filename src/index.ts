@@ -102,14 +102,26 @@ const main = async () => {
     const res9 = await org1PkgService.deletePackage(packageID)
     console.log(res9)
 
-    const res10 = await org1PkgService.readPackageDetailsAndPII(packageID)
-    console.log(res10)
+    try {
+        const res10 = await org1PkgService.readPackageDetailsAndPII(packageID)
+        console.log(res10)
+    } catch (error: any) {
+        console.log("Expected error:", error.message)
+    }
 
-    const res11 = await org1PkgService.readBlockchainPackage(packageID)
-    console.log(res11)
+    try {
+        const res11 = await org1PkgService.readBlockchainPackage(packageID)
+        console.log(res11)
+    } catch (error: any) {
+        console.log("Expected error:", error.message)
+    }
 
-    const res12 = await org2PkgService.readPrivateTransferTerms(terms.id)
-    console.log(res12)
+    try {
+        const res12 = await org2PkgService.readPrivateTransferTerms(terms.id)
+        console.log(res12)
+    } catch (error: any) {
+        console.log("Expected error:", error.message)
+    }
 }
 
 main()

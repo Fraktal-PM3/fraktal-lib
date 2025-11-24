@@ -8,7 +8,6 @@ import {
 import FireFly, { FireFlyOptionsInput } from "@hyperledger/firefly-sdk"
 import { describe, it, expect, beforeAll } from "vitest"
 import { randomBytes, randomUUID } from "crypto"
-import { read } from "fs"
 
 const FABCONNECT_ADDRESS =
     process.env.FABCONNECT_ADDRESS || "http://localhost:5102"
@@ -20,8 +19,6 @@ const FF_IDENTITY = process.env.FF_IDENTITY || "org_f5440c"
 
 // wait for blockchain operations to complete
 const BLOCKCHAIN_TIMEOUT = 30000
-
-// mock invoke/query ??
 
 describe("PackageService tests", () => {
     let org1PkgService: PackageService
@@ -104,7 +101,6 @@ describe("PackageService tests", () => {
                     true,
                 )
 
-                // Update from PENDING to READY_FOR_PICKUP (valid transition)
                 const response = await org1PkgService.updatePackageStatus(
                     updateTestPackageId,
                     Status.READY_FOR_PICKUP,

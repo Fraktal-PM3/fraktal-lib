@@ -36,8 +36,6 @@ var Status;
     Status["SUCCEEDED"] = "succeeded";
     /** Business process failed (irrecoverable). */
     Status["FAILED"] = "failed";
-    /** Transfer has been proposed. */
-    Status["PROPOSED"] = "proposed";
 })(Status || (exports.Status = Status = {}));
 /**
  * Status of a transfer proposal between organizations.

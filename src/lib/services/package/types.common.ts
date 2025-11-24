@@ -56,8 +56,6 @@ export enum Status {
     SUCCEEDED = "succeeded",
     /** Business process failed (irrecoverable). */
     FAILED = "failed",
-    /** Transfer has been proposed. */
-    PROPOSED = "proposed",
 }
 
 /**
@@ -193,5 +191,14 @@ export type PackageEventHandler = (
      * - `output`: Contract-defined event output/payload.
      * - `timestamp`: ISO-8601 time the event was recorded.
      */
-    res: { txid: string | undefined; output: any; timestamp: string } | { id: string, validator: string, namespace: string, hash: string, created: string, value: any },
-) => void  
+    res:
+        | { txid: string | undefined; output: any; timestamp: string }
+        | {
+              id: string
+              validator: string
+              namespace: string
+              hash: string
+              created: string
+              value: any
+          },
+) => void

@@ -1,5 +1,18 @@
-import FireFly, { FireFlyContractAPIResponse, FireFlyContractInterfaceResponse, FireFlyContractInvokeResponse, FireFlyContractQueryResponse, FireFlyDataResponse, FireFlyDatatypeResponse, FireFlyEventBatchDelivery, FireFlyEventDelivery } from "@hyperledger/firefly-sdk"
-import { PACKAGE_DETAILS_DT_NAME, PACKAGE_DETAILS_DT_VERSION, packageDetailsDatatypePayload } from "../../datatypes/package"
+import FireFly, {
+    FireFlyContractAPIResponse,
+    FireFlyContractInterfaceResponse,
+    FireFlyContractInvokeResponse,
+    FireFlyContractQueryResponse,
+    FireFlyDataResponse,
+    FireFlyDatatypeResponse,
+    FireFlyEventBatchDelivery,
+    FireFlyEventDelivery,
+} from "@hyperledger/firefly-sdk"
+import {
+    PACKAGE_DETAILS_DT_NAME,
+    PACKAGE_DETAILS_DT_VERSION,
+    packageDetailsDatatypePayload,
+} from "../../datatypes/package"
 import stringify from "json-stringify-deterministic"
 import sortKeysRecursive from "sort-keys-recursive"
 import contractInterface from "./interface.json"
@@ -115,28 +128,42 @@ export class PackageService {
             )
         })
 
-        this.ff.listen({ filter: { events: "message_confirmed" }, options: { withData: true } }, async (_socket, event) => {
-            // @ts-ignore
-            const msg = event.message
-            for (const d of msg.data) {
-                const full = await this.ff.getData(d.id)
-                if (full?.validator == "json") {
-                    this.handlers.get("message")?.forEach(handler => handler(full))
+        this.ff.listen(
+            {
+                filter: { events: "message_confirmed" },
+                options: { withData: true },
+            },
+            async (_socket, event) => {
+                // @ts-ignore
+                const msg = event.message
+                for (const d of msg.data) {
+                    const full = await this.ff.getData(d.id)
+                    if (full?.validator == "json") {
+                        this.handlers
+                            .get("message")
+                            ?.forEach((handler) => handler(full))
+                    }
                 }
-            }
-        })
+            },
+        )
 
-        this.ff.listen({ filter: { events: "blockchain_event" }, options: { withData: true } }, async (_socket, event) => {
-            const { blockchainEvent } = event as FireFlyEventDelivery
-            if (!blockchainEvent?.name) return
+        this.ff.listen(
+            {
+                filter: { events: "blockchain_event" },
+                options: { withData: true },
+            },
+            async (_socket, event) => {
+                const { blockchainEvent } = event as FireFlyEventDelivery
+                if (!blockchainEvent?.name) return
 
-            const handlers = this.handlers.get(blockchainEvent.name)
-            if (!handlers || handlers.length === 0) return
-            handlers.forEach(handler => {
-                handler({
-                    output: blockchainEvent.output,
-                    timestamp: blockchainEvent.timestamp,
-                    txid: blockchainEvent.tx.blockchainId
+                const handlers = this.handlers.get(blockchainEvent.name)
+                if (!handlers || handlers.length === 0) return
+                handlers.forEach((handler) => {
+                    handler({
+                        output: blockchainEvent.output,
+                        timestamp: blockchainEvent.timestamp,
+                        txid: blockchainEvent.tx.blockchainId,
+                    })
                 })
             },
         )

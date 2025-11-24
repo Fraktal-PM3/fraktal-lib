@@ -52,9 +52,7 @@ export declare enum Status {
     /** Business process completed successfully. */
     SUCCEEDED = "succeeded",
     /** Business process failed (irrecoverable). */
-    FAILED = "failed",
-    /** Transfer has been proposed. */
-    PROPOSED = "proposed"
+    FAILED = "failed"
 }
 /**
  * Status of a transfer proposal between organizations.
@@ -162,7 +160,7 @@ export type BlockchainPackage = {
     /** Current {@link Status}. */
     status: Status;
     /**
-     * Hash of the package details (and possibly PII+salt, per implementation).
+     * Hash of the package details (and PII + salt).
      * @remarks
      * Enables integrity checks without disclosing private content.
      */

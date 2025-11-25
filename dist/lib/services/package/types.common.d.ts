@@ -193,4 +193,6 @@ res: {
     hash: string;
     created: string;
     value: any;
+    signingKey: string;
+    author: string;
 }) => void;

@@ -141,7 +141,7 @@ export class PackageService {
                     if (full?.validator == "json") {
                         this.handlers
                             .get("message")
-                            ?.forEach((handler) => handler(full))
+                            ?.forEach((handler) => handler({...full, signingKey: msg.header.key, author: msg.header.author }) )
                     }
                 }
             },

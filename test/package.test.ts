@@ -87,6 +87,7 @@ describe("PackageService tests", () => {
         ) // Maybe add off-chain data verification here? Or verify on chain data in other tests instead
     })
     describe("updatePackageStatus", () => {
+        // TODO: This should fail because of fraktal utils out of date
         it(
             "should update package status from PENDING to READY_FOR_PICKUP",
             async () => {
@@ -116,6 +117,38 @@ describe("PackageService tests", () => {
                         updateTestPackageId,
                     )
                 expect(pkg.status).toBe(Status.READY_FOR_PICKUP)
+            },
+            BLOCKCHAIN_TIMEOUT,
+        )
+        //TODO: Should work but fraktal utils out of date
+        it(
+            "should succeed to update package status from PENDING to PROPOSED",
+            async () => {
+                const invalidUpdateTestPackageId = randomUUID()
+                const invalidUpdateTestSalt = randomBytes(32).toString("hex")
+                await org1PkgService.createPackage(
+                    invalidUpdateTestPackageId,
+                    packageDetails,
+                    pii,
+                    invalidUpdateTestSalt,
+                    true,
+                )
+
+                const response = await org1PkgService.updatePackageStatus(
+                    invalidUpdateTestPackageId,
+                    Status.PROPOSED,
+                )
+                expect(response).toBeDefined()
+                expect(response.error).toBeUndefined()
+                expect(response.status).toBe("Succeeded")
+                expect(response.id).toMatch(/^[a-f0-9-]+$/)
+                expect(response.namespace).toBe(FF_NAMESPACE)
+                expect(response.status).toBe("Succeeded")
+
+                const pkg = await org1PkgService.readBlockchainPackage(
+                    invalidUpdateTestPackageId,
+                )
+                expect(pkg.status).toBe(Status.PROPOSED)
             },
             BLOCKCHAIN_TIMEOUT,
         )

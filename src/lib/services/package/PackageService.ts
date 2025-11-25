@@ -605,22 +605,13 @@ export class PackageService {
     public acceptTransfer = async (
         externalId: string,
         termsId: string,
-        packageDetails: PackageDetails,
-        pii: PackagePII,
-        salt: string,
         privateTransferTerms: { price: number },
     ) => {
-        // hash the package details and PII to ensure integrity
-        const packageDetailsAndPIIHash = crypto
-            .createHash("sha256")
-            .update(stringify(sortKeysRecursive({ packageDetails, pii, salt })))
-            .digest("hex")
-
         const res = await this.ff.invokeContractAPI(
             contractInterface.name,
             "AcceptTransfer",
             {
-                input: { externalId, termsId, packageDetailsAndPIIHash },
+                input: { externalId, termsId },
                 options: {
                     transientMap: {
                         privateTransferTerms:

@@ -238,7 +238,7 @@ export declare class PackageService {
      * @param privateTransferTerms Private fields (e.g., `price`) sent via `transientMap`.
      * @returns FireFly invocation response.
      */
-    acceptTransfer: (externalId: string, termsId: string, packageDetails: PackageDetails, pii: PackagePII, salt: string, privateTransferTerms: {
+    acceptTransfer: (externalId: string, termsId: string, privateTransferTerms: {
         price: number;
     }) => Promise<Required<{
         created?: string;

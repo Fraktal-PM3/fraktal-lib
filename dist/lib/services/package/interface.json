@@ -249,12 +249,6 @@
                     "schema": {
                         "type": "string"
                     }
-                },
-                {
-                    "name": "packageDetailsAndPIIHash",
-                    "schema": {
-                        "type": "string"
-                    }
                 }
             ],
             "returns": []

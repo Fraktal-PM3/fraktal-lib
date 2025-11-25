@@ -94,7 +94,7 @@ const main = async () => {
     org1FF.sendPrivateMessage({
         header: {},
         group: {
-            members: [{ identity: 'did:firefly:org/org_0c6d3b' }],
+            members: [{ identity: 'did:firefly:org/org_9c592e' }],
         },
         data: [
           { value: "This is a message" },
@@ -141,9 +141,6 @@ const main = async () => {
     const res7 = await org2PkgService.acceptTransfer(
         packageID,
         terms.id,
-        packageDetails,
-        pii,
-        salt,
         { price: 100 },
     )
     console.log(res7)

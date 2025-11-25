@@ -6,6 +6,7 @@ import {
 import FireFly, { FireFlyOptionsInput } from "@hyperledger/firefly-sdk"
 import { PackageService } from "./lib/services/package/PackageService"
 import crypto, { randomUUID } from "crypto"
+import RoleService from "./lib/services/role/RoleService"
 
 // Exports for docs
 export { PackageService } from "./lib/services/package/PackageService"
@@ -25,10 +26,25 @@ const main = async () => {
     const org2FF = new FireFly(org2FFOptions)
 
     const org1PkgService = new PackageService(org1FF)
-    const org2PkgService = new PackageService(org2FF)
+    const org1RoleAuthService = new RoleService(org1FF)
 
+    
+    const org2PkgService = new PackageService(org2FF)
+    
+    await org1RoleAuthService.initialize()
     await org1PkgService.initalize()
     await org2PkgService.initalize()
+
+    // Assign roles and permissions
+    const res = await org1RoleAuthService.setPermissions("Org2MSP", [
+        "package:create",
+        "package:read",
+        "package:read:private",
+        "package:updateStatus",
+        "transfer:propose",
+        "transfer:execute",
+    ])
+    console.log(res)
 
     const packageID = randomUUID()
     const packageDetails = {
@@ -57,9 +73,15 @@ const main = async () => {
 
     
     org2PkgService.onEvent("message", (args: any) => {
-        console.log("=============MESSAGE=============")
+        console.log("=============ORG 2 MESSAGE=============")
         console.log(args)
         console.log("=================================")
+    })
+
+    org1PkgService.onEvent("message", (args: any) => {
+        console.log("=============ORG 1 MESSAGE=============")
+        console.log(args)
+        console.log("=======================================")
     })
 
     org2PkgService.onEvent("CreatePackage", (args: any) => {
@@ -72,7 +94,7 @@ const main = async () => {
     org1FF.sendPrivateMessage({
         header: {},
         group: {
-            members: [{ identity: "did:firefly:org/org_76043d" }],
+            members: [{ identity: 'did:firefly:org/org_0c6d3b' }],
         },
         data: [
           { value: "This is a message" },

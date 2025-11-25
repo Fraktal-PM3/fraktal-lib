@@ -1,0 +1,71 @@
+{
+    "namespace": "default",
+    "name": "pm3roleauth",
+    "description": "FFI for RoleAuthContract that manages role-based permissions (pm3, ombud, transporter).",
+    "version": "1.0.0",
+    "methods": [
+        {
+            "name": "getPermissions",
+            "pathname": "",
+            "description": "Get explicit permissions for an identity. If identityIdentifier is omitted, uses the caller identity.",
+            "params": [
+                {
+                    "name": "identityIdentifier",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "returns": [
+                {
+                    "name": "",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "setPermissions",
+            "pathname": "",
+            "description": "Set explicit permissions for a target identity. Only callers from the PM3 MSP may update permissions.",
+            "params": [
+                {
+                    "name": "targetIdentityIdentifier",
+                    "schema": {
+                        "type": "string"
+                    }
+                },
+                {
+                    "name": "permissions",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "returns": []
+        },
+        {
+            "name": "hasPermission",
+            "pathname": "",
+            "description": "Check whether the caller has the supplied permission, based on stored permissions.",
+            "params": [
+                {
+                    "name": "permission",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "returns": [
+                {
+                    "name": "",
+                    "schema": {
+                        "type": "boolean"
+                    }
+                }
+            ]
+        }
+    ],
+    "events": []
+}

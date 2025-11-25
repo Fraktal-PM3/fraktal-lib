@@ -358,12 +358,12 @@ export class PackageService {
             {
                 input: {
                     externalId,
-                    salt,
                 },
                 options: {
                     transientMap: {
                         pii: JSON.stringify(pii),
                         packageDetails: JSON.stringify(packageDetails),
+                        salt: salt.toString()
                     },
                 },
             },

@@ -44,6 +44,7 @@ const types_common_1 = require("./lib/services/package/types.common");
 const firefly_sdk_1 = __importDefault(require("@hyperledger/firefly-sdk"));
 const PackageService_1 = require("./lib/services/package/PackageService");
 const crypto_1 = __importStar(require("crypto"));
+const RoleService_1 = __importDefault(require("./lib/services/role/RoleService"));
 // Exports for docs
 var PackageService_2 = require("./lib/services/package/PackageService");
 Object.defineProperty(exports, "PackageService", { enumerable: true, get: function () { return PackageService_2.PackageService; } });
@@ -60,9 +61,21 @@ const main = async () => {
     const org1FF = new firefly_sdk_1.default(org1FFOptions);
     const org2FF = new firefly_sdk_1.default(org2FFOptions);
     const org1PkgService = new PackageService_1.PackageService(org1FF);
+    const org1RoleAuthService = new RoleService_1.default(org1FF);
     const org2PkgService = new PackageService_1.PackageService(org2FF);
+    await org1RoleAuthService.initialize();
     await org1PkgService.initalize();
     await org2PkgService.initalize();
+    // Assign roles and permissions
+    const res = await org1RoleAuthService.setPermissions("Org2MSP", [
+        "package:create",
+        "package:read",
+        "package:read:private",
+        "package:updateStatus",
+        "transfer:propose",
+        "transfer:execute",
+    ]);
+    console.log(res);
     const packageID = (0, crypto_1.randomUUID)();
     const packageDetails = {
         pickupLocation: {
@@ -87,9 +100,14 @@ const main = async () => {
         name: "John Doe",
     };
     org2PkgService.onEvent("message", (args) => {
-        console.log("=============MESSAGE=============");
+        console.log("=============ORG 2 MESSAGE=============");
         console.log(args);
         console.log("=================================");
+    });
+    org1PkgService.onEvent("message", (args) => {
+        console.log("=============ORG 1 MESSAGE=============");
+        console.log(args);
+        console.log("=======================================");
     });
     org2PkgService.onEvent("CreatePackage", (args) => {
         console.log("=================================");
@@ -99,7 +117,7 @@ const main = async () => {
     org1FF.sendPrivateMessage({
         header: {},
         group: {
-            members: [{ identity: "did:firefly:org/org_76043d" }],
+            members: [{ identity: 'did:firefly:org/org_0c6d3b' }],
         },
         data: [
             { value: "This is a message" },

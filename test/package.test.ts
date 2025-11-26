@@ -8,6 +8,7 @@ import {
 import FireFly, { FireFlyOptionsInput } from "@hyperledger/firefly-sdk"
 import { describe, it, expect, beforeAll } from "vitest"
 import { randomBytes, randomUUID } from "crypto"
+import RoleService from "../src/lib/services/role/RoleService"
 
 const FABCONNECT_ADDRESS =
     process.env.FABCONNECT_ADDRESS || "http://localhost:5102"
@@ -47,6 +48,7 @@ describe("PackageService tests", () => {
             host: FF_HOST,
             namespace: FF_NAMESPACE,
         }
+
         const org2FFOptions: FireFlyOptionsInput = {
             host: FF_HOST_ORG2,
             namespace: FF_NAMESPACE,
@@ -59,6 +61,26 @@ describe("PackageService tests", () => {
         const org2FF = new FireFly(org2FFOptions)
         org2PkgService = new PackageService(org2FF)
         await org2PkgService.initalize()
+
+        const org1RoleService = new RoleService(org1FF)
+        await org1RoleService.initialize()
+        await org1RoleService.setPermissions("Org2MSP", [
+            "package:create",
+            "package:read",
+            "package:delete",
+            "transfer:propose",
+            "transfer:accept",
+            "transfer:execute",
+        ])
+
+        await org1RoleService.setPermissions("Org1MSP", [
+            "package:create",
+            "package:read",
+            "package:delete",
+            "transfer:propose",
+            "transfer:accept",
+            "transfer:execute",
+        ])
     })
 
     it("should initialize successfully", () => {
@@ -87,13 +109,35 @@ describe("PackageService tests", () => {
         ) // Maybe add off-chain data verification here? Or verify on chain data in other tests instead
     })
     describe("updatePackageStatus", () => {
-        // TODO: This should fail because of fraktal utils out of date
         it(
-            "should update package status from PENDING to READY_FOR_PICKUP",
+            "should fail to update package status from PENDING to READY_FOR_PICKUP",
+            async () => {
+                const invalidUpdateTestPackageId = randomUUID()
+                const invalidUpdateTestSalt = randomBytes(32).toString("hex")
+
+                await org1PkgService.createPackage(
+                    invalidUpdateTestPackageId,
+                    packageDetails,
+                    pii,
+                    invalidUpdateTestSalt,
+                    true,
+                )
+
+                await expect(
+                    org1PkgService.updatePackageStatus(
+                        invalidUpdateTestPackageId,
+                        Status.READY_FOR_PICKUP,
+                    ),
+                ).rejects.toThrow(/The status transition from/)
+            },
+            BLOCKCHAIN_TIMEOUT,
+        )
+
+        it(
+            "should succeed to update package status from PENDING to PROPOSED",
             async () => {
                 const updateTestPackageId = randomUUID()
                 const updateTestSalt = randomBytes(32).toString("hex")
-
                 await org1PkgService.createPackage(
                     updateTestPackageId,
                     packageDetails,
@@ -104,38 +148,6 @@ describe("PackageService tests", () => {
 
                 const response = await org1PkgService.updatePackageStatus(
                     updateTestPackageId,
-                    Status.READY_FOR_PICKUP,
-                )
-                expect(response).toBeDefined()
-                expect(response.error).toBeUndefined()
-                expect(response.status).toBe("Succeeded")
-                expect(response.id).toMatch(/^[a-f0-9-]+$/)
-                expect(response.namespace).toBe(FF_NAMESPACE)
-
-                const pkg =
-                    await org1PkgService.readBlockchainPackage(
-                        updateTestPackageId,
-                    )
-                expect(pkg.status).toBe(Status.READY_FOR_PICKUP)
-            },
-            BLOCKCHAIN_TIMEOUT,
-        )
-        //TODO: Should work but fraktal utils out of date
-        it(
-            "should succeed to update package status from PENDING to PROPOSED",
-            async () => {
-                const invalidUpdateTestPackageId = randomUUID()
-                const invalidUpdateTestSalt = randomBytes(32).toString("hex")
-                await org1PkgService.createPackage(
-                    invalidUpdateTestPackageId,
-                    packageDetails,
-                    pii,
-                    invalidUpdateTestSalt,
-                    true,
-                )
-
-                const response = await org1PkgService.updatePackageStatus(
-                    invalidUpdateTestPackageId,
                     Status.PROPOSED,
                 )
                 expect(response).toBeDefined()
@@ -145,9 +157,10 @@ describe("PackageService tests", () => {
                 expect(response.namespace).toBe(FF_NAMESPACE)
                 expect(response.status).toBe("Succeeded")
 
-                const pkg = await org1PkgService.readBlockchainPackage(
-                    invalidUpdateTestPackageId,
-                )
+                const pkg =
+                    await org1PkgService.readBlockchainPackage(
+                        updateTestPackageId,
+                    )
                 expect(pkg.status).toBe(Status.PROPOSED)
             },
             BLOCKCHAIN_TIMEOUT,
@@ -177,8 +190,8 @@ describe("PackageService tests", () => {
                 expect(pkg.externalId).toBe(readTestPackageId)
                 expect(pkg.status).toBe(Status.PENDING)
                 expect(pkg.ownerOrgMSP).toBeDefined()
-                expect(pkg.packageDetailsHash).toBeDefined()
-                expect(pkg.packageDetailsHash).toMatch(/^[a-f0-9]+$/) // hash should be hex string
+                expect(pkg.packageDetailsAndPIIHash).toBeDefined()
+                expect(pkg.packageDetailsAndPIIHash).toMatch(/^[a-f0-9]+$/) // hash should be hex string
             },
             BLOCKCHAIN_TIMEOUT,
         )
@@ -338,9 +351,6 @@ describe("PackageService tests", () => {
                 const response = await org2PkgService.acceptTransfer(
                     acceptTestPackageId,
                     terms.id,
-                    packageDetails,
-                    pii,
-                    acceptTestSalt,
                     privateTransferTerms,
                 )
 
@@ -393,9 +403,6 @@ describe("PackageService tests", () => {
                 await org2PkgService.acceptTransfer(
                     executeTestPackageId,
                     terms.id,
-                    packageDetails,
-                    pii,
-                    executeTestSalt,
                     privateTransferTerms,
                 )
 

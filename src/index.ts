@@ -28,9 +28,8 @@ const main = async () => {
     const org1PkgService = new PackageService(org1FF)
     const org1RoleAuthService = new RoleService(org1FF)
 
-    
     const org2PkgService = new PackageService(org2FF)
-    
+
     await org1RoleAuthService.initialize()
     await org1PkgService.initalize()
     await org2PkgService.initalize()
@@ -71,7 +70,6 @@ const main = async () => {
         name: "John Doe",
     }
 
-    
     org2PkgService.onEvent("message", (args: any) => {
         console.log("=============ORG 2 MESSAGE=============")
         console.log(args)
@@ -88,17 +86,14 @@ const main = async () => {
         console.log("=================================")
         console.log(args)
         console.log("=================================")
-        
     })
 
     org1FF.sendPrivateMessage({
         header: {},
         group: {
-            members: [{ identity: 'did:firefly:org/org_9c592e' }],
+            members: [{ identity: "did:firefly:org/org_6418e3" }],
         },
-        data: [
-          { value: "This is a message" },
-        ],
+        data: [{ value: "This is a message" }],
     })
 
     const salt = crypto.randomBytes(16).toString("hex")
@@ -125,9 +120,11 @@ const main = async () => {
     const res5 = await org1PkgService.readPackageDetailsAndPII(packageID)
     console.log("PII", res5)
 
+    const transferSalt = crypto.randomBytes(16).toString("hex")
     const terms = {
         id: randomUUID(),
         price: 100,
+        salt: transferSalt,
     }
 
     const res6 = await org1PkgService.proposeTransfer(
@@ -138,11 +135,10 @@ const main = async () => {
     )
     console.log(res6)
 
-    const res7 = await org2PkgService.acceptTransfer(
-        packageID,
-        terms.id,
-        { price: 100 },
-    )
+    const res7 = await org2PkgService.acceptTransfer(packageID, terms.id, {
+        salt: transferSalt,
+        price: 100,
+    })
     console.log(res7)
 
     const res8 = await org1PkgService.executeTransfer(packageID, terms.id, {

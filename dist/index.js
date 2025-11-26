@@ -117,11 +117,9 @@ const main = async () => {
     org1FF.sendPrivateMessage({
         header: {},
         group: {
-            members: [{ identity: 'did:firefly:org/org_9c592e' }],
+            members: [{ identity: "did:firefly:org/org_a0e2e9" }],
         },
-        data: [
-            { value: "This is a message" },
-        ],
+        data: [{ value: "This is a message" }],
     });
     const salt = crypto_1.default.randomBytes(16).toString("hex");
     const res1 = await org1PkgService.createPackage(packageID, packageDetails, pii, salt);
@@ -137,13 +135,18 @@ const main = async () => {
     console.log(res4);
     const res5 = await org1PkgService.readPackageDetailsAndPII(packageID);
     console.log("PII", res5);
+    const transferSalt = crypto_1.default.randomBytes(16).toString("hex");
     const terms = {
         id: (0, crypto_1.randomUUID)(),
         price: 100,
+        salt: transferSalt,
     };
     const res6 = await org1PkgService.proposeTransfer(packageID, "Org2MSP", terms, new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString());
     console.log(res6);
-    const res7 = await org2PkgService.acceptTransfer(packageID, terms.id, { price: 100 });
+    const res7 = await org2PkgService.acceptTransfer(packageID, terms.id, {
+        salt: transferSalt,
+        price: 100,
+    });
     console.log(res7);
     const res8 = await org1PkgService.executeTransfer(packageID, terms.id, {
         salt,

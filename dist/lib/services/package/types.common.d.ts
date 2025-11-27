@@ -188,6 +188,7 @@ res: {
     timestamp: string;
 } | {
     id: string;
+    header: any;
     validator: string;
     namespace: string;
     hash: string;

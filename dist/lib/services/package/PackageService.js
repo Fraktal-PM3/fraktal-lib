@@ -99,9 +99,12 @@ class PackageService {
                 for (const d of msg.data) {
                     const full = await this.ff.getData(d.id);
                     if (full?.validator == "json") {
-                        this.handlers
-                            .get("message")
-                            ?.forEach((handler) => handler({ ...full, signingKey: msg.header.key, author: msg.header.author }));
+                        this.handlers.get("message")?.forEach((handler) => handler({
+                            ...full,
+                            signingKey: msg.header.key,
+                            author: msg.header.author,
+                            header: msg.header,
+                        }));
                     }
                 }
             });
@@ -287,7 +290,7 @@ class PackageService {
                     transientMap: {
                         pii: JSON.stringify(pii),
                         packageDetails: JSON.stringify(packageDetails),
-                        salt: salt.toString()
+                        salt: salt.toString(),
                     },
                 },
             }, {

@@ -195,6 +195,7 @@ export type PackageEventHandler = (
         | { txid: string | undefined; output: any; timestamp: string }
         | {
               id: string
+              header: any
               validator: string
               namespace: string
               hash: string

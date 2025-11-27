@@ -1,5 +1,5 @@
 import FireFly, { FireFlyContractInvokeResponse, FireFlyContractQueryResponse, FireFlyDataResponse, FireFlyDatatypeResponse } from "@hyperledger/firefly-sdk";
-import { BlockchainPackage, PackageDetails, PackageDetailsWithId, PackagePII, Status, StoreObject } from "./types.common";
+import { BlockchainPackage, PackageDetails, PackageDetailsWithId, PackagePII, Status, StoreObject, CreatePackageEvent, StatusUpdatedEvent, DeletePackageEvent, ProposeTransferEvent, AcceptTransferEvent, TransferExecutedEvent, FireFlyDatatypeMessage, BlockchainEventDelivery } from "./types.common";
 /**
  * High-level API for interacting with blockchain-based package management via Hyperledger FireFly.
  *
@@ -20,8 +20,8 @@ import { BlockchainPackage, PackageDetails, PackageDetailsWithId, PackagePII, St
  *
  * @example Listening for Events
  * ```ts
- * await svc.onEvent("PackageCreated", (e) => {
- *   console.log("New package:", e.output, e.txid)
+ * await svc.onEvent("CreatePackage", (e) => {
+ *   console.log("New package:", e.output.externalId, e.txid)
  * })
  * ```
  *
@@ -73,19 +73,50 @@ export declare class PackageService {
      */
     private createContractInterface;
     /**
-     * Registers a local handler for a blockchain event.
+     * Registers a local handler for a blockchain event with type-safe casting.
+     * Provides specific event types for known events, and a generic fallback for others.
      *
      * @param eventName Name of the blockchain event (as defined in the contract interface).
-     * @param handler Callback invoked for each event delivery.
+     * @param handler Callback invoked for each event delivery with properly typed event data.
      *
      * @example
      * ```ts
-     * await svc.onEvent("PackageUpdated", (e) => {
-     *   console.log(e.txid, e.timestamp, e.output)
+     * // Type-safe listener for CreatePackage event
+     * await svc.onEvent("CreatePackage", (e) => {
+     *   console.log(e.output.externalId, e.output.ownerOrgMSP)
+     * })
+     *
+     * // Type-safe listener for StatusUpdated event
+     * await svc.onEvent("StatusUpdated", (e) => {
+     *   console.log(e.output.externalId, e.output.status)
+     * })
+     *
+     * // Type-safe listener for ProposeTransfer event
+     * await svc.onEvent("ProposeTransfer", (e) => {
+     *   console.log(e.output.termsId, e.output.terms.fromMSP)
      * })
      * ```
      */
-    onEvent: (eventName: string, handler: (...args: any) => void) => Promise<void>;
+    onEvent(eventName: "CreatePackage", handler: (event: BlockchainEventDelivery & {
+        output: CreatePackageEvent;
+    }) => void): Promise<void>;
+    onEvent(eventName: "StatusUpdated", handler: (event: BlockchainEventDelivery & {
+        output: StatusUpdatedEvent;
+    }) => void): Promise<void>;
+    onEvent(eventName: "DeletePackage", handler: (event: BlockchainEventDelivery & {
+        output: DeletePackageEvent;
+    }) => void): Promise<void>;
+    onEvent(eventName: "ProposeTransfer", handler: (event: BlockchainEventDelivery & {
+        output: ProposeTransferEvent;
+    }) => void): Promise<void>;
+    onEvent(eventName: "AcceptTransfer", handler: (event: BlockchainEventDelivery & {
+        output: AcceptTransferEvent;
+    }) => void): Promise<void>;
+    onEvent(eventName: "TransferExecuted", handler: (event: BlockchainEventDelivery & {
+        output: TransferExecutedEvent;
+    }) => void): Promise<void>;
+    onEvent(eventName: "message", handler: (event: FireFlyDatatypeMessage) => void): Promise<void>;
+    onEvent(eventName: string, handler: (event: BlockchainEventDelivery | FireFlyDatatypeMessage) => void): Promise<void>;
     /**
      * Looks up the contract API by name from FireFly.
      * @returns The contract API (if found) or `null`.

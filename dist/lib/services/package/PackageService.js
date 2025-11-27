@@ -26,8 +26,8 @@ const interface_json_1 = __importDefault(require("./interface.json"));
  *
  * @example Listening for Events
  * ```ts
- * await svc.onEvent("PackageCreated", (e) => {
- *   console.log("New package:", e.output, e.txid)
+ * await svc.onEvent("CreatePackage", (e) => {
+ *   console.log("New package:", e.output.externalId, e.txid)
  * })
  * ```
  *
@@ -99,12 +99,16 @@ class PackageService {
                 for (const d of msg.data) {
                     const full = await this.ff.getData(d.id);
                     if (full?.validator == "json") {
-                        this.handlers.get("message")?.forEach((handler) => handler({
+                        const messageData = {
                             ...full,
                             signingKey: msg.header.key,
                             author: msg.header.author,
                             header: msg.header,
-                        }));
+                        };
+                        // Dispatch to generic "message" handlers
+                        this.handlers.get("message")?.forEach((handler) => handler(messageData));
+                        // Also attempt to dispatch to datatype-specific handlers
+                        // by checking value structure to match registered datatype names
                     }
                 }
             });
@@ -123,6 +127,10 @@ class PackageService {
                         output: blockchainEvent.output,
                         timestamp: blockchainEvent.timestamp,
                         txid: blockchainEvent.tx.blockchainId,
+                        header: {
+                            key: "",
+                            author: "",
+                        },
                     });
                 });
             });
@@ -152,25 +160,6 @@ class PackageService {
                 publish: true,
                 confirm: true,
             });
-        };
-        /**
-         * Registers a local handler for a blockchain event.
-         *
-         * @param eventName Name of the blockchain event (as defined in the contract interface).
-         * @param handler Callback invoked for each event delivery.
-         *
-         * @example
-         * ```ts
-         * await svc.onEvent("PackageUpdated", (e) => {
-         *   console.log(e.txid, e.timestamp, e.output)
-         * })
-         * ```
-         */
-        this.onEvent = async (eventName, handler) => {
-            if (!this.handlers.has(eventName)) {
-                this.handlers.set(eventName, []);
-            }
-            this.handlers.get(eventName)?.push(handler);
         };
         /**
          * Looks up the contract API by name from FireFly.
@@ -471,6 +460,14 @@ class PackageService {
             return res;
         };
         this.ff = ff;
+    }
+    // Implementation - compatible with all overloads
+    async onEvent(eventName, handler) {
+        if (!this.handlers.has(eventName)) {
+            this.handlers.set(eventName, []);
+        }
+        // Cast the handler to PackageEventHandler since it's compatible with both event types
+        this.handlers.get(eventName)?.push(handler);
     }
 }
 exports.PackageService = PackageService;

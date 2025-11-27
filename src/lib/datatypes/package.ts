@@ -62,3 +62,41 @@ export const packageDetailsDatatypePayload =(namespace = "default") : FireFlyDat
         $id: `ff://${namespace}/${PACKAGE_DETAILS_DT_NAME}/${PACKAGE_DETAILS_DT_VERSION}`,
     },
 })
+
+export const TRANSFER_OFFER_DT_NAME = "TransferOffer"
+export const TRANSFER_OFFER_DT_VERSION = "1.0.0"
+
+export const TransferOfferSchema2020 = {
+    $schema: "https://json-schema.org/draft/2020-12/schema",
+    $id: `ff://default/${TRANSFER_OFFER_DT_NAME}/${TRANSFER_OFFER_DT_VERSION}`,
+    title: "TransferOffer",
+    type: "object",
+    properties: {
+        externalPackageId: { type: "string" },
+        termsId: { type: "string" },
+        fromMSP: { type: "string" },
+        toMSP: { type: "string" },
+        price: { type: "number" },
+        createdISO: { type: "string" },
+        expiryISO: { type: ["string", "null"] },
+    },
+    required: [
+        "externalPackageId",
+        "termsId",
+        "fromMSP",
+        "toMSP",
+        "price",
+        "createdISO",
+    ],
+    additionalProperties: false,
+}
+
+export const transferOfferDatatypePayload = (namespace = "default"): FireFlyDatatypeRequest => ({
+    name: TRANSFER_OFFER_DT_NAME,
+    version: TRANSFER_OFFER_DT_VERSION,
+    validator: "json",
+    value: {
+        ...TransferOfferSchema2020,
+        $id: `ff://${namespace}/${TRANSFER_OFFER_DT_NAME}/${TRANSFER_OFFER_DT_VERSION}`,
+    },
+})

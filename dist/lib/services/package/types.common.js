@@ -1,6 +1,8 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TransferStatus = exports.Status = exports.Urgency = void 0;
+exports.isPackageDetailsMessage = isPackageDetailsMessage;
+exports.isTransferOfferMessage = isTransferOfferMessage;
 /**
  * How urgent a delivery is.
  */
@@ -55,4 +57,36 @@ var TransferStatus;
     /** Proposal expired without action. */
     TransferStatus["EXPIRED"] = "expired";
 })(TransferStatus || (exports.TransferStatus = TransferStatus = {}));
+/**
+ * Type guard to check if a message is a PackageDetails datatype message.
+ * @param msg The message to check.
+ * @returns true if the message contains PackageDetails data.
+ */
+function isPackageDetailsMessage(msg) {
+    return (msg.validator === "json" &&
+        typeof msg.value === "object" &&
+        msg.value !== null &&
+        "id" in msg.value &&
+        "pickupLocation" in msg.value &&
+        "dropLocation" in msg.value &&
+        "size" in msg.value &&
+        "weightKg" in msg.value &&
+        "urgency" in msg.value);
+}
+/**
+ * Type guard to check if a message is a TransferOffer datatype message.
+ * @param msg The message to check.
+ * @returns true if the message contains TransferOffer data.
+ */
+function isTransferOfferMessage(msg) {
+    return (msg.validator === "json" &&
+        typeof msg.value === "object" &&
+        msg.value !== null &&
+        "externalPackageId" in msg.value &&
+        "termsId" in msg.value &&
+        "fromMSP" in msg.value &&
+        "toMSP" in msg.value &&
+        "price" in msg.value &&
+        "createdISO" in msg.value);
+}
 //# sourceMappingURL=types.common.js.map

@@ -25,7 +25,28 @@ import {
     PackagePII,
     Status,
     StoreObject,
+    CreatePackageEvent,
+    StatusUpdatedEvent,
+    DeletePackageEvent,
+    ProposeTransferEvent,
+    AcceptTransferEvent,
+    TransferExecutedEvent,
+    FireFlyDatatypeMessage,
+    BlockchainEventDelivery,
 } from "./types.common"
+
+/**
+ * Type-safe event listener configuration mapping event names to their output types.
+ * @internal
+ */
+type EventTypeMap = {
+    CreatePackage: CreatePackageEvent
+    StatusUpdated: StatusUpdatedEvent
+    DeletePackage: DeletePackageEvent
+    ProposeTransfer: ProposeTransferEvent
+    AcceptTransfer: AcceptTransferEvent
+    TransferExecuted: TransferExecutedEvent
+}
 
 /**
  * High-level API for interacting with blockchain-based package management via Hyperledger FireFly.
@@ -47,8 +68,8 @@ import {
  *
  * @example Listening for Events
  * ```ts
- * await svc.onEvent("PackageCreated", (e) => {
- *   console.log("New package:", e.output, e.txid)
+ * await svc.onEvent("CreatePackage", (e) => {
+ *   console.log("New package:", e.output.externalId, e.txid)
  * })
  * ```
  *
@@ -139,14 +160,18 @@ export class PackageService {
                 for (const d of msg.data) {
                     const full = await this.ff.getData(d.id)
                     if (full?.validator == "json") {
+                        const messageData = {
+                            ...full,
+                            signingKey: msg.header.key,
+                            author: msg.header.author,
+                            header: msg.header,
+                        }
+                        // Dispatch to generic "message" handlers
                         this.handlers.get("message")?.forEach((handler) =>
-                            handler({
-                                ...full,
-                                signingKey: msg.header.key,
-                                author: msg.header.author,
-                                header: msg.header,
-                            }),
+                            handler(messageData),
                         )
+                        // Also attempt to dispatch to datatype-specific handlers
+                        // by checking value structure to match registered datatype names
                     }
                 }
             },
@@ -168,6 +193,10 @@ export class PackageService {
                         output: blockchainEvent.output,
                         timestamp: blockchainEvent.timestamp,
                         txid: blockchainEvent.tx.blockchainId,
+                        header: {
+                            key: "",
+                            author: "",
+                        },
                     })
                 })
             },
@@ -205,26 +234,84 @@ export class PackageService {
     }
 
     /**
-     * Registers a local handler for a blockchain event.
+     * Registers a local handler for a blockchain event with type-safe casting.
+     * Provides specific event types for known events, and a generic fallback for others.
      *
      * @param eventName Name of the blockchain event (as defined in the contract interface).
-     * @param handler Callback invoked for each event delivery.
+     * @param handler Callback invoked for each event delivery with properly typed event data.
      *
      * @example
      * ```ts
-     * await svc.onEvent("PackageUpdated", (e) => {
-     *   console.log(e.txid, e.timestamp, e.output)
+     * // Type-safe listener for CreatePackage event
+     * await svc.onEvent("CreatePackage", (e) => {
+     *   console.log(e.output.externalId, e.output.ownerOrgMSP)
+     * })
+     *
+     * // Type-safe listener for StatusUpdated event
+     * await svc.onEvent("StatusUpdated", (e) => {
+     *   console.log(e.output.externalId, e.output.status)
+     * })
+     *
+     * // Type-safe listener for ProposeTransfer event
+     * await svc.onEvent("ProposeTransfer", (e) => {
+     *   console.log(e.output.termsId, e.output.terms.fromMSP)
      * })
      * ```
      */
-    public onEvent = async (
+
+    // Overloads for type-safe blockchain event listeners
+    public onEvent(
+        eventName: "CreatePackage",
+        handler: (event: BlockchainEventDelivery & { output: CreatePackageEvent }) => void,
+    ): Promise<void>
+
+    public onEvent(
+        eventName: "StatusUpdated",
+        handler: (event: BlockchainEventDelivery & { output: StatusUpdatedEvent }) => void,
+    ): Promise<void>
+
+    public onEvent(
+        eventName: "DeletePackage",
+        handler: (event: BlockchainEventDelivery & { output: DeletePackageEvent }) => void,
+    ): Promise<void>
+
+    public onEvent(
+        eventName: "ProposeTransfer",
+        handler: (event: BlockchainEventDelivery & { output: ProposeTransferEvent }) => void,
+    ): Promise<void>
+
+    public onEvent(
+        eventName: "AcceptTransfer",
+        handler: (event: BlockchainEventDelivery & { output: AcceptTransferEvent }) => void,
+    ): Promise<void>
+
+    public onEvent(
+        eventName: "TransferExecuted",
+        handler: (event: BlockchainEventDelivery & { output: TransferExecutedEvent }) => void,
+    ): Promise<void>
+
+    // Generic message event listener for FireFly datatype messages
+    public onEvent(
+        eventName: "message",
+        handler: (event: FireFlyDatatypeMessage) => void,
+    ): Promise<void>
+
+    // Generic fallback for other event names
+    public onEvent(
         eventName: string,
-        handler: (...args: any) => void,
-    ): Promise<void> => {
+        handler: (event: BlockchainEventDelivery | FireFlyDatatypeMessage) => void,
+    ): Promise<void>
+
+    // Implementation - compatible with all overloads
+    public async onEvent(
+        eventName: string,
+        handler: (event: any) => void,
+    ): Promise<void> {
         if (!this.handlers.has(eventName)) {
             this.handlers.set(eventName, [])
         }
-        this.handlers.get(eventName)?.push(handler)
+        // Cast the handler to PackageEventHandler since it's compatible with both event types
+        this.handlers.get(eventName)?.push(handler as unknown as PackageEventHandler)
     }
 
     /**

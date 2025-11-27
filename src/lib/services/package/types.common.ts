@@ -182,26 +182,216 @@ export type BlockchainPackage = {
 export type PackageDetailsWithId = PackageDetails & { id: string }
 
 /**
+ * FireFly message header information.
+ */
+export type FireFlyMessageHeader = {
+    /** Signing key ID used to sign this message. */
+    key: string
+    /** Author identity of the message sender. */
+    author: string
+    /** Additional header metadata. */
+    [key: string]: any
+}
+
+/**
+ * Generic FireFly datatype message event.
+ * Represents a message that was confirmed on-chain with datatype information.
+ */
+export type FireFlyDatatypeMessage = {
+    /** Unique message identifier. */
+    id: string
+    /** Message header with signing and author information. */
+    header: FireFlyMessageHeader
+    /** Validator type (typically "json"). */
+    validator: string
+    /** Namespace the message belongs to. */
+    namespace: string
+    /** Hash of the message content. */
+    hash: string
+    /** ISO-8601 timestamp when created. */
+    created: string
+    /** The parsed message value/payload. */
+    value: any
+    /** Signing key used for this message. */
+    signingKey: string
+    /** Author identity. */
+    author: string
+}
+
+/**
+ * Blockchain-emitted event with typed output.
+ */
+export type BlockchainEventDelivery = {
+    /** Blockchain transaction ID. */
+    txid?: string
+    /** Event output/payload from the contract. */
+    output: any
+    /** ISO-8601 timestamp when the event was recorded. */
+    timestamp: string
+    /** Message header (always included). */
+    header: FireFlyMessageHeader
+}
+
+/**
  * Callback signature for package-related blockchain events.
  */
 export type PackageEventHandler = (
-    /**
-     * Event payload supplied by the listener layer.
-     * - `txid`: Blockchain transaction identifier, if available.
-     * - `output`: Contract-defined event output/payload.
-     * - `timestamp`: ISO-8601 time the event was recorded.
-     */
-    res:
-        | { txid: string | undefined; output: any; timestamp: string }
-        | {
-              id: string
-              header: any
-              validator: string
-              namespace: string
-              hash: string
-              created: string
-              value: any
-              signingKey: string
-              author: string
-          },
+    res: BlockchainEventDelivery | FireFlyDatatypeMessage,
 ) => void
+
+/**
+ * Event emitted when a package is created.
+ */
+export type CreatePackageEvent = {
+    /** External identifier of the created package. */
+    externalId: string
+    /** MSP/organization that owns the package. */
+    ownerOrgMSP: string
+    /** Initial status of the package. */
+    status: Status
+    /** Integrity hash of the package details and PII. */
+    packageDetailsAndPIIHash: string
+    /** Identity of the caller who created the package. */
+    caller: string
+}
+
+/**
+ * Event emitted when a package status changes.
+ */
+export type StatusUpdatedEvent = {
+    /** External identifier of the package. */
+    externalId: string
+    /** New status of the package. */
+    status: Status
+    /** Identity of the caller who updated the status. */
+    caller: string
+}
+
+/**
+ * Event emitted when a package is deleted.
+ */
+export type DeletePackageEvent = {
+    /** External identifier of the deleted package. */
+    externalId: string
+    /** Status of the package at deletion. */
+    status: Status
+    /** Identity of the caller who deleted the package. */
+    caller: string
+}
+
+/**
+ * Event emitted when a transfer is proposed.
+ */
+export type ProposeTransferEvent = {
+    /** External identifier of the package being transferred. */
+    externalId: string
+    /** Identifier for this transfer proposal. */
+    termsId: string
+    /** Public transfer terms. */
+    terms: {
+        /** External identifier of the package (in transfer context). */
+        extenalPackageId?: string
+        /** MSP initiating the transfer. */
+        fromMSP: string
+        /** ISO-8601 creation timestamp. */
+        createdISO: string
+        /** MSP targeted to receive the package. */
+        toMSP: string
+        /** Optional ISO-8601 expiry timestamp. */
+        expiryISO: string | null | undefined
+    }
+    /** Identity of the caller who proposed the transfer. */
+    caller: string
+}
+
+/**
+ * Event emitted when a transfer is accepted.
+ */
+export type AcceptTransferEvent = {
+    /** External identifier of the package. */
+    externalId: string
+    /** Identifier for the accepted transfer proposal. */
+    termsId: string
+    /** Identity of the caller who accepted the transfer. */
+    caller: string
+}
+
+/**
+ * Event emitted when a transfer is executed (ownership transferred).
+ */
+export type TransferExecutedEvent = {
+    /** External identifier of the package. */
+    externalId: string
+    /** Identifier for the executed transfer. */
+    termsId: string
+    /** MSP that is now the new owner of the package. */
+    newOwner: string
+    /** Identity of the caller who executed the transfer. */
+    caller: string
+}
+
+/**
+ * Type guard to check if a message is a PackageDetails datatype message.
+ * @param msg The message to check.
+ * @returns true if the message contains PackageDetails data.
+ */
+export function isPackageDetailsMessage(
+    msg: FireFlyDatatypeMessage,
+): msg is FireFlyDatatypeMessage & {
+    value: PackageDetailsWithId
+} {
+    return (
+        msg.validator === "json" &&
+        typeof msg.value === "object" &&
+        msg.value !== null &&
+        "id" in msg.value &&
+        "pickupLocation" in msg.value &&
+        "dropLocation" in msg.value &&
+        "size" in msg.value &&
+        "weightKg" in msg.value &&
+        "urgency" in msg.value
+    )
+}
+
+/**
+ * Transfer offer data structure for FireFly datatype messages.
+ */
+export type TransferOfferData = {
+    /** External identifier of the package being transferred. */
+    externalPackageId: string
+    /** Identifier for this transfer proposal. */
+    termsId: string
+    /** MSP initiating the transfer. */
+    fromMSP: string
+    /** MSP targeted to receive the package. */
+    toMSP: string
+    /** Price for the transfer. */
+    price: number
+    /** ISO-8601 creation timestamp. */
+    createdISO: string
+    /** Optional ISO-8601 expiry timestamp. */
+    expiryISO: string | null | undefined
+}
+
+/**
+ * Type guard to check if a message is a TransferOffer datatype message.
+ * @param msg The message to check.
+ * @returns true if the message contains TransferOffer data.
+ */
+export function isTransferOfferMessage(
+    msg: FireFlyDatatypeMessage,
+): msg is FireFlyDatatypeMessage & {
+    value: TransferOfferData
+} {
+    return (
+        msg.validator === "json" &&
+        typeof msg.value === "object" &&
+        msg.value !== null &&
+        "externalPackageId" in msg.value &&
+        "termsId" in msg.value &&
+        "fromMSP" in msg.value &&
+        "toMSP" in msg.value &&
+        "price" in msg.value &&
+        "createdISO" in msg.value
+    )
+}

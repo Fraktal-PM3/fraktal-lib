@@ -68,3 +68,37 @@ export declare const PackageDetailsSchema2020: {
     };
 };
 export declare const packageDetailsDatatypePayload: (namespace?: string) => FireFlyDatatypeRequest;
+export declare const TRANSFER_OFFER_DT_NAME = "TransferOffer";
+export declare const TRANSFER_OFFER_DT_VERSION = "1.0.0";
+export declare const TransferOfferSchema2020: {
+    $schema: string;
+    $id: string;
+    title: string;
+    type: string;
+    properties: {
+        externalPackageId: {
+            type: string;
+        };
+        termsId: {
+            type: string;
+        };
+        fromMSP: {
+            type: string;
+        };
+        toMSP: {
+            type: string;
+        };
+        price: {
+            type: string;
+        };
+        createdISO: {
+            type: string;
+        };
+        expiryISO: {
+            type: string[];
+        };
+    };
+    required: string[];
+    additionalProperties: boolean;
+};
+export declare const transferOfferDatatypePayload: (namespace?: string) => FireFlyDatatypeRequest;

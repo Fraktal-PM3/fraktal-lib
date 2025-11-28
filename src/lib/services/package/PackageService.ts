@@ -5,34 +5,33 @@ import FireFly, {
     FireFlyContractQueryResponse,
     FireFlyDataResponse,
     FireFlyDatatypeResponse,
-    FireFlyEventBatchDelivery,
-    FireFlyEventDelivery,
+    FireFlyEventDelivery
 } from "@hyperledger/firefly-sdk"
 import {
     PACKAGE_DETAILS_DT_NAME,
     PACKAGE_DETAILS_DT_VERSION,
     packageDetailsDatatypePayload,
+    TRANSFER_OFFER_DT_NAME,
+    TRANSFER_OFFER_DT_VERSION,
+    transferOfferDatatypePayload,
 } from "../../datatypes/package"
-import stringify from "json-stringify-deterministic"
-import sortKeysRecursive from "sort-keys-recursive"
 import contractInterface from "./interface.json"
-import crypto from "crypto"
 import {
+    AcceptTransferEvent,
+    BlockchainEventDelivery,
     BlockchainPackage,
+    CreatePackageEvent,
+    DeletePackageEvent,
+    FireFlyDatatypeMessage,
     PackageDetails,
     PackageDetailsWithId,
     PackageEventHandler,
     PackagePII,
-    Status,
-    StoreObject,
-    CreatePackageEvent,
-    StatusUpdatedEvent,
-    DeletePackageEvent,
     ProposeTransferEvent,
-    AcceptTransferEvent,
+    Status,
+    StatusUpdatedEvent,
+    StoreObject,
     TransferExecutedEvent,
-    FireFlyDatatypeMessage,
-    BlockchainEventDelivery,
 } from "./types.common"
 
 /**
@@ -93,6 +92,7 @@ export class PackageService {
     /**
      * Initializes the service:
      * - Ensures the private package **datatype** exists (creates if missing).
+     * - Ensures the **transfer offer datatype** exists (creates if missing).
      * - Ensures the **contract interface** and **contract API** exist (creates if missing).
      * - Registers blockchain **event listeners** for all interface events.
      *
@@ -102,6 +102,10 @@ export class PackageService {
     public initalize = async (): Promise<void> => {
         if (!(await this.dataTypeExists())) {
             await this.createDataType()
+        }
+
+        if (!(await this.transferOfferDataTypeExists())) {
+            await this.createTransferOfferDataType()
         }
 
         await this.createContractInterface()
@@ -386,6 +390,76 @@ export class PackageService {
         const dataTypes = await this.ff.getDatatypes({
             name: payload.name,
             version: payload.version,
+        })
+        return dataTypes[0]
+    }
+
+
+    /**
+     * Creates and registers the "transfer offer" datatype with the FireFly instance.
+     *
+     * This asynchronous private helper builds the datatype payload (via
+     * transferOfferDatatypePayload()), then calls the FireFly client to create the
+     * datatype with publishing enabled and confirmation awaited.
+     *
+     * @private
+     * @async
+     * @returns A promise that resolves to the FireFly datatype creation response
+     *          (FireFlyDatatypeResponse) once the datatype has been published and
+     *          confirmed.
+     * @throws Will propagate any errors thrown by the payload builder or the FireFly
+     *         client's createDatatype call (for example network errors or API
+     *         validation failures).
+     * @remarks The created datatype is published (publish: true) and the call waits
+     *          for confirmation (confirm: true) before resolving.
+     */
+    private createTransferOfferDataType = async (): Promise<FireFlyDatatypeResponse> => {
+        const payload = transferOfferDatatypePayload()
+        const dataType = await this.ff.createDatatype(payload, {
+            publish: true,
+            confirm: true,
+        })
+        return dataType
+    }
+    /**
+     * Determines whether the Transfer Offer data type (identified by TRANSFER_OFFER_DT_NAME and
+     * TRANSFER_OFFER_DT_VERSION) is present in the data type registry.
+     *
+     * The method queries the underlying data-type service via `this.ff.getDatatypes(...)` and returns
+     * true if at least one matching data type is returned.
+     *
+     * @returns A Promise that resolves to `true` if one or more matching data types exist, otherwise `false`.
+     *
+     * @throws Propagates any error thrown by `this.ff.getDatatypes`.
+     */
+    public transferOfferDataTypeExists = async (): Promise<boolean> => {
+        const dataTypes = await this.ff.getDatatypes({
+            name: TRANSFER_OFFER_DT_NAME,
+            version: TRANSFER_OFFER_DT_VERSION,
+        })
+        return dataTypes.length > 0
+    }
+
+    /**
+     * Retrieve the Transfer Offer FireFly datatype.
+     *
+     * This method first verifies that the Transfer Offer datatype exists by calling
+     * `transferOfferDataTypeExists()`. If the datatype is not present, it throws an Error.
+     * If it exists, the method queries the FireFly client (`this.ff.getDatatypes`) for
+     * datatypes matching the configured name and version and returns the first result.
+     *
+     * @throws {Error} If the Transfer Offer datatype does not exist.
+     * @throws {Error} If the underlying FireFly client call (`this.ff.getDatatypes`) fails.
+     * @returns {Promise<FireFlyDatatypeResponse>} A promise that resolves to the first matching FireFly datatype.
+     */
+    public getTransferOfferDataType = async (): Promise<FireFlyDatatypeResponse> => {
+        if (!(await this.transferOfferDataTypeExists())) {
+            throw new Error("Transfer Offer Data type does not exist")
+        }
+
+        const dataTypes = await this.ff.getDatatypes({
+            name: TRANSFER_OFFER_DT_NAME,
+            version: TRANSFER_OFFER_DT_VERSION,
         })
         return dataTypes[0]
     }

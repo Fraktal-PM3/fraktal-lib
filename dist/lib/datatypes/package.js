@@ -15,6 +15,7 @@ exports.PackageDetailsSchema2020 = {
         size: { $ref: "#/definitions/Size" },
         weightKg: { type: "number" },
         urgency: { $ref: "#/definitions/Urgency" },
+        price: { $ref: "#/definitions/Price" },
     },
     required: [
         "id",

@@ -25,6 +25,9 @@ export declare const PackageDetailsSchema2020: {
         urgency: {
             $ref: string;
         };
+        price: {
+            $ref: string;
+        };
     };
     required: string[];
     additionalProperties: boolean;

@@ -65,6 +65,9 @@ export declare const PackageDetailsSchema2020: {
             type: string;
             enum: string[];
         };
+        Price: {
+            type: string;
+        };
     };
 };
 export declare const packageDetailsDatatypePayload: (namespace?: string) => FireFlyDatatypeRequest;

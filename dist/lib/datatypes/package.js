@@ -50,6 +50,9 @@ exports.PackageDetailsSchema2020 = {
             type: "string",
             enum: ["high", "medium", "low", "none"],
         },
+        Price: {
+            type: "number"
+        }
     },
 };
 const packageDetailsDatatypePayload = (namespace = "default") => ({

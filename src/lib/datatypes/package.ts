@@ -50,10 +50,13 @@ export const PackageDetailsSchema2020 = {
             type: "string",
             enum: ["high", "medium", "low", "none"],
         },
+        Price: {
+            type: "number"
+        }
     },
 }
 
-export const packageDetailsDatatypePayload =(namespace = "default") : FireFlyDatatypeRequest => ({
+export const packageDetailsDatatypePayload = (namespace = "default"): FireFlyDatatypeRequest => ({
     name: PACKAGE_DETAILS_DT_NAME,
     version: PACKAGE_DETAILS_DT_VERSION,
     validator: "json",

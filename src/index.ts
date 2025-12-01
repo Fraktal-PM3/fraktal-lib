@@ -218,6 +218,7 @@ const main = async () => {
 
     const createRes = await org1PkgService.createPackage(
         packageID,
+        "Org1MSP",
         packageDetails,
         pii,
         salt,
@@ -356,6 +357,7 @@ const main = async () => {
 
     const createRes2 = await org1PkgService.createPackage(
         packageID2,
+        "Org1MSP",
         packageDetails,
         pii,
         salt2,

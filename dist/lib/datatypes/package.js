@@ -38,7 +38,8 @@ exports.PackageDetailsSchema2020 = {
             additionalProperties: false,
         },
         Size: {
-            type: "object",
+            type: "object", dISO: { type: "string" },
+            expiryISO: { type: ["string", "null"] },
             properties: {
                 width: { type: "number" },
                 height: { type: "number" },
@@ -75,7 +76,6 @@ exports.TransferOfferSchema2020 = {
     type: "object",
     properties: {
         externalPackageId: { type: "string" },
-        termsId: { type: "string" },
         fromMSP: { type: "string" },
         toMSP: { type: "string" },
         price: { type: "number" },
@@ -84,7 +84,6 @@ exports.TransferOfferSchema2020 = {
     },
     required: [
         "externalPackageId",
-        "termsId",
         "fromMSP",
         "toMSP",
         "price",

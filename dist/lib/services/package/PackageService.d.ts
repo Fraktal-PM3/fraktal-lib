@@ -1,5 +1,5 @@
 import FireFly, { FireFlyContractInvokeResponse, FireFlyContractQueryResponse, FireFlyDataResponse, FireFlyDatatypeResponse } from "@hyperledger/firefly-sdk";
-import { BlockchainPackage, PackageDetails, PackageDetailsWithId, PackagePII, Status, StoreObject, CreatePackageEvent, StatusUpdatedEvent, DeletePackageEvent, ProposeTransferEvent, AcceptTransferEvent, TransferExecutedEvent, FireFlyDatatypeMessage, BlockchainEventDelivery } from "./types.common";
+import { AcceptTransferEvent, BlockchainEventDelivery, BlockchainPackage, CreatePackageEvent, DeletePackageEvent, FireFlyDatatypeMessage, PackageDetails, PackageDetailsWithId, PackagePII, ProposeTransferEvent, Status, StatusUpdatedEvent, StoreObject, TransferExecutedEvent } from "./types.common";
 /**
  * High-level API for interacting with blockchain-based package management via Hyperledger FireFly.
  *
@@ -41,6 +41,7 @@ export declare class PackageService {
     /**
      * Initializes the service:
      * - Ensures the private package **datatype** exists (creates if missing).
+     * - Ensures the **transfer offer datatype** exists (creates if missing).
      * - Ensures the **contract interface** and **contract API** exist (creates if missing).
      * - Registers blockchain **event listeners** for all interface events.
      *
@@ -147,6 +148,50 @@ export declare class PackageService {
      */
     getDataType: () => Promise<FireFlyDatatypeResponse>;
     /**
+     * Creates and registers the "transfer offer" datatype with the FireFly instance.
+     *
+     * This asynchronous private helper builds the datatype payload (via
+     * transferOfferDatatypePayload()), then calls the FireFly client to create the
+     * datatype with publishing enabled and confirmation awaited.
+     *
+     * @private
+     * @async
+     * @returns A promise that resolves to the FireFly datatype creation response
+     *          (FireFlyDatatypeResponse) once the datatype has been published and
+     *          confirmed.
+     * @throws Will propagate any errors thrown by the payload builder or the FireFly
+     *         client's createDatatype call (for example network errors or API
+     *         validation failures).
+     * @remarks The created datatype is published (publish: true) and the call waits
+     *          for confirmation (confirm: true) before resolving.
+     */
+    private createTransferOfferDataType;
+    /**
+     * Determines whether the Transfer Offer data type (identified by TRANSFER_OFFER_DT_NAME and
+     * TRANSFER_OFFER_DT_VERSION) is present in the data type registry.
+     *
+     * The method queries the underlying data-type service via `this.ff.getDatatypes(...)` and returns
+     * true if at least one matching data type is returned.
+     *
+     * @returns A Promise that resolves to `true` if one or more matching data types exist, otherwise `false`.
+     *
+     * @throws Propagates any error thrown by `this.ff.getDatatypes`.
+     */
+    transferOfferDataTypeExists: () => Promise<boolean>;
+    /**
+     * Retrieve the Transfer Offer FireFly datatype.
+     *
+     * This method first verifies that the Transfer Offer datatype exists by calling
+     * `transferOfferDataTypeExists()`. If the datatype is not present, it throws an Error.
+     * If it exists, the method queries the FireFly client (`this.ff.getDatatypes`) for
+     * datatypes matching the configured name and version and returns the first result.
+     *
+     * @throws {Error} If the Transfer Offer datatype does not exist.
+     * @throws {Error} If the underlying FireFly client call (`this.ff.getDatatypes`) fails.
+     * @returns {Promise<FireFlyDatatypeResponse>} A promise that resolves to the first matching FireFly datatype.
+     */
+    getTransferOfferDataType: () => Promise<FireFlyDatatypeResponse>;
+    /**
      * Reads a locally-cached FireFly data record by ID.
      * @param id FireFly data ID.
      * @returns The data record (if found) or `null` if missing/errored.
@@ -187,7 +232,7 @@ export declare class PackageService {
      * await svc.createPackage("pkg-001", details, { name: "Alice" }, saltHex);
      * ```
      */
-    createPackage: (externalId: string, packageDetails: PackageDetails, pii: PackagePII, salt: string, broadcast?: boolean) => Promise<FireFlyContractInvokeResponse>;
+    createPackage: (externalId: string, recipientOrgMSP: string, packageDetails: PackageDetails, pii: PackagePII, salt: string, broadcast?: boolean) => Promise<FireFlyContractInvokeResponse>;
     /**
      * Updates the **status** of an existing package.
      * @param externalId Package external ID.

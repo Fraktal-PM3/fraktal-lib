@@ -841,4 +841,24 @@ export class PackageService {
         )
         return res
     }
+
+    /**
+     * Transfers a package to PM3 (used for archiving or external transfers). The reciepient is always PM3. Additionally the package status must
+     * be "Delivered" to be eligible for transfer to PM3 and the reciepint org must be the owner (and the one executing the transfer).
+     * @param externalId Package external ID.
+     * @returns FireFly invocation response.
+    */
+    public transferToPM3 = async (
+        externalId: string,
+    ): Promise<FireFlyContractInvokeResponse> => {
+        const res = await this.ff.invokeContractAPI(
+            contractInterface.name,
+            "TransferToPM3",
+            {
+                input: { externalId },
+            },
+            { confirm: true, publish: true },
+        )
+        return res
+    }
 }

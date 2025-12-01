@@ -278,6 +278,20 @@
                 }
             ],
             "returns": []
+        },
+        {
+            "name": "TransferToPM3",
+            "pathname": "",
+            "description": "Transfer ownership of a package to PM3. Only the current owner org (which is the reciepient org in this case) may transfer to PM3.",
+            "params": [
+                {
+                    "name": "externalId",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "returns": []
         }
     ],
     "events": [
@@ -444,6 +458,18 @@
                         "type": "string"
                     },
                     "caller": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        {
+            "name": "TransferToPM3",
+            "description": "Emitted when a package is transferred to PM3",
+            "details": {
+                "type": "object",
+                "properties": {
+                    "externalId": {
                         "type": "string"
                     }
                 }

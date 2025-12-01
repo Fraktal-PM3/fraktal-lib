@@ -276,18 +276,20 @@ export declare class PackageService {
      *
      * @param externalId Package external ID.
      * @param toMSP MSP ID of the recipient organization.
-     * @param terms Proposed terms `{ id, price }`. The `price` is sent privately via `transientMap`.
+     * @param terms Proposed terms `{ id, price, salt }`. The `price` and `salt` are sent privately via `transientMap`.
      * @param expiryISO Optional ISO-8601 expiry time for the offer.
      * @returns FireFlyContractInvokeResponse.
      *
      * @example
      * ```ts
-     * await svc.proposeTransfer("pkg-001", "Org2MSP", { id: "t-123", price: 42.5 });
+     * const salt = crypto.randomBytes(16).toString("hex")
+     * await svc.proposeTransfer("pkg-001", "Org2MSP", { id: "t-123", price: 42.5, salt });
      * ```
      */
     proposeTransfer: (externalId: string, toMSP: string, terms: {
         price: number;
         id: string;
+        salt: string;
     }, expiryISO?: string) => Promise<FireFlyContractInvokeResponse>;
     /**
      * Reads the public transfer terms for a given terms ID.
@@ -311,10 +313,11 @@ export declare class PackageService {
      *
      * @param externalId Package external ID.
      * @param termsId Identifier of the terms being accepted.
-     * @param privateTransferTerms Private fields (e.g., `price`) sent via `transientMap`.
+     * @param privateTransferTerms Private fields (e.g., `salt`, `price`) sent via `transientMap`.
      * @returns FireFly invocation response.
      */
     acceptTransfer: (externalId: string, termsId: string, privateTransferTerms: {
+        salt: string;
         price: number;
     }) => Promise<Required<{
         created?: string;

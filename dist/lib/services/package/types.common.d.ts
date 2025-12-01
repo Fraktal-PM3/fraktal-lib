@@ -83,6 +83,8 @@ export type PackagePII = {
  * Private terms for a transfer that should not be public on-chain.
  */
 export type PrivateTransferTerms = {
+    /** Random salt used for hashing private transfer terms for integrity verification. */
+    salt: string;
     /** Price to transfer ownership (currency/context external). */
     price: number;
 };
@@ -103,6 +105,11 @@ export type TransferTerms = {
      * If `null`/`undefined`, the proposal does not expire automatically.
      */
     expiryISO: string | null | undefined;
+    /**
+     * SHA256 hash of the private transfer terms.
+     * Used to verify integrity without revealing private data publicly.
+     */
+    privateTermsHash: string;
 };
 /**
  * A transfer instance and its state.

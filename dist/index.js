@@ -175,18 +175,18 @@ const main = async () => {
     await new Promise((resolve) => setTimeout(resolve, 1500));
     log.success("FireFly listeners ready");
     // Set up permissions
-    log.section("Setting up Permissions");
-    await org1RoleAuthService.setPermissions("Org2MSP", [
-        "package:create",
-        "package:read",
-        "package:read:private",
-        "package:updateStatus",
-        "transfer:propose",
-        "transfer:accept",
-        "transfer:execute",
-        "package:delete",
-    ]);
-    log.success("Permissions assigned to Org2MSP");
+    // log.section("Setting up Permissions")
+    // await org1RoleAuthService.setPermissions("Org2MSP", [
+    //     "package:create",
+    //     "package:read",
+    //     "package:read:private",
+    //     "package:updateStatus",
+    //     "transfer:propose",
+    //     "transfer:accept",
+    //     "transfer:execute",
+    //     "package:delete",
+    // ])
+    // log.success("Permissions assigned to Org2MSP")
     // Test 1: Create a package
     log.section("Test 1: Create Package");
     const packageID = (0, crypto_1.randomUUID)();
@@ -273,6 +273,7 @@ const main = async () => {
     log.section("Test 7: Propose Transfer to Org2");
     const termsId = (0, crypto_1.randomUUID)();
     const transferPrice = 500.0;
+    const transferSalt = crypto_1.default.randomBytes(16).toString("hex");
     log.data("Transfer proposal", {
         termsId,
         packageID,
@@ -280,7 +281,7 @@ const main = async () => {
         toOrg: "Org2MSP",
         price: transferPrice,
     });
-    const proposeRes = await org1PkgService.proposeTransfer(packageID, "Org2MSP", { id: termsId, price: transferPrice }, new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString());
+    const proposeRes = await org1PkgService.proposeTransfer(packageID, "Org2MSP", { id: termsId, price: transferPrice, salt: transferSalt }, new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString());
     log.success(`Transfer proposed: ${proposeRes.id}`);
     // Test 8: Read transfer terms
     log.section("Test 8: Read Transfer Terms");
@@ -290,6 +291,7 @@ const main = async () => {
     log.section("Test 9: Accept Transfer (Org2)");
     log.info(`Org2 accepting transfer for terms: ${termsId}...`);
     const acceptRes = await org2PkgService.acceptTransfer(packageID, termsId, {
+        salt: transferSalt,
         price: transferPrice,
     });
     log.success(`Transfer accepted: ${acceptRes.id}`);

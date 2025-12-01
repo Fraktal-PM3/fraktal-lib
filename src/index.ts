@@ -288,6 +288,7 @@ const main = async () => {
     log.section("Test 7: Propose Transfer to Org2")
     const termsId = randomUUID()
     const transferPrice = 500.0
+    const transferSalt = crypto.randomBytes(16).toString("hex")
 
     log.data("Transfer proposal", {
         termsId,
@@ -300,7 +301,7 @@ const main = async () => {
     const proposeRes = await org1PkgService.proposeTransfer(
         packageID,
         "Org2MSP",
-        { id: termsId, price: transferPrice },
+        { id: termsId, price: transferPrice, salt: transferSalt },
         new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days
     )
     log.success(`Transfer proposed: ${proposeRes.id}`)
@@ -315,6 +316,7 @@ const main = async () => {
     log.info(`Org2 accepting transfer for terms: ${termsId}...`)
 
     const acceptRes = await org2PkgService.acceptTransfer(packageID, termsId, {
+        salt: transferSalt,
         price: transferPrice,
     })
     log.success(`Transfer accepted: ${acceptRes.id}`)

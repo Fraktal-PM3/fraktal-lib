@@ -86,7 +86,6 @@ export const TransferOfferSchema2020 = {
     },
     required: [
         "externalPackageId",
-        "termsId",
         "fromMSP",
         "toMSP",
         "price",
@@ -104,4 +103,5 @@ export const transferOfferDatatypePayload = (namespace = "default"): FireFlyData
         $id: `ff://${namespace}/${TRANSFER_OFFER_DT_NAME}/${TRANSFER_OFFER_DT_VERSION}`,
     },
 })
+
 

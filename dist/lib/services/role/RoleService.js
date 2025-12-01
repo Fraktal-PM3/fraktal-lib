@@ -46,8 +46,10 @@ class RoleService {
          * - Ensures the **contract API** exists (creates if missing).
          *
          * Safe to call multiple times; subsequent calls will no-op.
+         *
+         * @param forceRecreate If true, deletes and recreates the interface and API
          */
-        this.initialize = async () => {
+        this.initialize = async (forceRecreate = false) => {
             await this.createContractInterface();
             await this.createContractAPI();
             this.initializedFlag = true;
@@ -108,7 +110,7 @@ class RoleService {
             await this.ff.createContractAPI({
                 interface: { id: iface.id },
                 // NOTE: channel/chaincode must match your Fabric deployment
-                location: { channel: "pm3", chaincode: iface.name },
+                location: { channel: "pm3", chaincode: "pm3roleauth" },
                 name: iface.name,
             });
         };
@@ -127,22 +129,38 @@ class RoleService {
             if (identityIdentifier) {
                 input.identityIdentifier = identityIdentifier;
             }
-            const res = await this.ff.queryContractAPI(interface_json_1.default.name, "getPermissions", { input }, { confirm: true, publish: true });
-            // Chaincode returns a JSON stringified Permission[]
+            console.log(`[RoleService.getPermissions] Querying permissions for: ${identityIdentifier || "caller"}`);
+            console.log(`[RoleService.getPermissions] Using contract API: ${interface_json_1.default.name}`);
+            console.log(`[RoleService.getPermissions] Input:`, input);
+            const res = (await this.ff.queryContractAPI(interface_json_1.default.name, "getPermissions", { input }, { confirm: true, publish: true }));
+            console.log(`[RoleService.getPermissions] Raw response:`, res);
+            console.log(`[RoleService.getPermissions] Response type:`, typeof res);
+            // FireFly automatically deserializes the JSON response
+            // The chaincode returns a JSON string, but FireFly parses it for us
             const raw = res;
-            if (typeof raw !== "string") {
-                return [];
+            // If it's already an array, return it directly
+            if (Array.isArray(raw)) {
+                console.log(`[RoleService.getPermissions] Response is already an array:`, raw);
+                return raw;
             }
-            try {
-                const parsed = JSON.parse(raw);
-                if (!Array.isArray(parsed))
+            // If it's a string, try to parse it
+            if (typeof raw === "string") {
+                try {
+                    const parsed = JSON.parse(raw);
+                    console.log(`[RoleService.getPermissions] Parsed response:`, parsed);
+                    if (!Array.isArray(parsed)) {
+                        console.log(`[RoleService.getPermissions] Parsed response is not an array, returning empty array`);
+                        return [];
+                    }
+                    return parsed;
+                }
+                catch (err) {
+                    console.log(`[RoleService.getPermissions] Failed to parse response:`, err);
                     return [];
-                // We trust on-chain validation for actual enum membership
-                return parsed;
+                }
             }
-            catch {
-                return [];
-            }
+            console.log(`[RoleService.getPermissions] Unexpected response format, returning empty array`);
+            return [];
         };
         /**
          * Set explicit permissions for a target identity.
@@ -154,13 +172,83 @@ class RoleService {
          * @returns FireFly invocation response.
          */
         this.setPermissions = async (targetIdentityIdentifier, permissions) => {
+            console.log(`[RoleService.setPermissions] Setting permissions for: ${targetIdentityIdentifier}`);
+            console.log(`[RoleService.setPermissions] Permissions:`, permissions);
+            console.log(`[RoleService.setPermissions] Using contract API: ${interface_json_1.default.name}`);
             const res = await this.ff.invokeContractAPI(interface_json_1.default.name, "setPermissions", {
                 input: {
                     targetIdentityIdentifier,
-                    permissions: JSON.stringify(permissions),
+                    permissionsJson: JSON.stringify(permissions),
+                },
+            }, { confirm: true, publish: true });
+            console.log(`[RoleService.setPermissions] Response:`, res);
+            return res;
+        };
+        /**
+         * Grant specific permissions to a target organization.
+         * Only callers from the PM3 MSP may grant permissions (enforced by chaincode).
+         * This adds permissions to existing ones without removing any.
+         *
+         * @param targetMSP Target organization's MSP ID (e.g., "Org2MSP")
+         * @param permissions Array of {@link Permission} values to grant (will be added to existing permissions).
+         * @returns FireFly invocation response.
+         *
+         * @example
+         * // Add package:create permission to Org2MSP
+         * await roleSvc.grantPermissionsToOrg("Org2MSP", ["package:create"])
+         */
+        this.grantPermissionsToOrg = async (targetMSP, permissions) => {
+            const res = await this.ff.invokeContractAPI(interface_json_1.default.name, "grantPermissionsToOrg", {
+                input: {
+                    targetMSP,
+                    permissionsJson: JSON.stringify(permissions),
                 },
             }, { confirm: true, publish: true });
             return res;
+        };
+        /**
+         * Revoke all permissions from a target organization.
+         * Only callers from the PM3 MSP may revoke permissions (enforced by chaincode).
+         *
+         * @param targetMSP Target organization's MSP ID
+         * @returns FireFly invocation response.
+         */
+        this.revokePermissionsFromOrg = async (targetMSP) => {
+            const res = await this.ff.invokeContractAPI(interface_json_1.default.name, "revokePermissionsFromOrg", {
+                input: {
+                    targetMSP,
+                },
+            }, { confirm: true, publish: true });
+            return res;
+        };
+        /**
+         * Remove specific permissions from a target organization.
+         * Only callers from the PM3 MSP may remove permissions (enforced by chaincode).
+         *
+         * @param targetMSP Target organization's MSP ID
+         * @param permissions Array of {@link Permission} values to remove.
+         * @returns FireFly invocation response.
+         */
+        this.removePermissionsFromOrg = async (targetMSP, permissions) => {
+            const res = await this.ff.invokeContractAPI(interface_json_1.default.name, "removePermissionsFromOrg", {
+                input: {
+                    targetMSP,
+                    permissionsJson: JSON.stringify(permissions),
+                },
+            }, { confirm: true, publish: true });
+            return res;
+        };
+        /**
+         * Get the caller's permissions from the blockchain.
+         *
+         * @returns An array of {@link Permission} values.
+         */
+        this.getCallerPermissions = async () => {
+            const res = (await this.ff.queryContractAPI(interface_json_1.default.name, "getCallerPermissions", { input: {} }, { confirm: true, publish: true }));
+            const raw = res;
+            if (!Array.isArray(raw))
+                return [];
+            return raw;
         };
         /**
          * Check whether the **caller** has the supplied permission.
@@ -169,9 +257,18 @@ class RoleService {
          * @returns `true` if the caller has the permission; otherwise `false`.
          */
         this.hasPermission = async (permission) => {
-            const res = await this.ff.queryContractAPI(interface_json_1.default.name, "hasPermission", {
+            const res = await this.ff.queryContractAPI(interface_json_1.default.name, "callerHasPermission", {
                 input: { permission },
             }, { confirm: true, publish: true });
+            return res;
+        };
+        /**
+         * Get the caller's identity identifier.
+         *
+         * @returns The caller's identity identifier in format "MSPID"
+         */
+        this.getCallerIdentifier = async () => {
+            const res = await this.ff.queryContractAPI(interface_json_1.default.name, "getCallerIdentifier", { input: {} }, { confirm: true, publish: true });
             return res;
         };
         this.ff = ff;

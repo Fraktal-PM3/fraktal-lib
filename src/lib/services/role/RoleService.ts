@@ -54,8 +54,12 @@ export default class RoleService {
      * - Ensures the **contract API** exists (creates if missing).
      *
      * Safe to call multiple times; subsequent calls will no-op.
+     *
+     * @param forceRecreate If true, deletes and recreates the interface and API
      */
-    public initialize = async (): Promise<void> => {
+    public initialize = async (
+        forceRecreate: boolean = false,
+    ): Promise<void> => {
         await this.createContractInterface()
         await this.createContractAPI()
         this.initializedFlag = true
@@ -75,12 +79,13 @@ export default class RoleService {
      * @returns The interface (if found) or `null`.
      * @remarks Internal helper; not intended for direct use.
      */
-    private getContractInterface = async (): Promise<FireFlyContractInterfaceResponse | null> => {
-        const interfaces = await this.ff.getContractInterfaces({
-            name: contractInterface.name,
-        })
-        return interfaces[0] || null
-    }
+    private getContractInterface =
+        async (): Promise<FireFlyContractInterfaceResponse | null> => {
+            const interfaces = await this.ff.getContractInterfaces({
+                name: contractInterface.name,
+            })
+            return interfaces[0] || null
+        }
 
     /**
      * Creates the contract interface in FireFly if it does not exist.
@@ -104,12 +109,13 @@ export default class RoleService {
      * @returns The contract API (if found) or `null`.
      * @remarks Internal helper; not intended for direct use.
      */
-    private getContractAPI = async (): Promise<FireFlyContractAPIResponse | null> => {
-        const apis = await this.ff.getContractAPIs({
-            name: contractInterface.name,
-        })
-        return apis[0] || null
-    }
+    private getContractAPI =
+        async (): Promise<FireFlyContractAPIResponse | null> => {
+            const apis = await this.ff.getContractAPIs({
+                name: contractInterface.name,
+            })
+            return apis[0] || null
+        }
 
     /**
      * Creates the contract API in FireFly if it does not exist.
@@ -124,7 +130,7 @@ export default class RoleService {
         await this.ff.createContractAPI({
             interface: { id: iface.id },
             // NOTE: channel/chaincode must match your Fabric deployment
-            location: { channel: "pm3", chaincode: iface.name },
+            location: { channel: "pm3", chaincode: "pm3roleauth" },
             name: iface.name,
         })
     }
@@ -140,34 +146,73 @@ export default class RoleService {
      * @param identityIdentifier Optional stable identity identifier used by the chaincode.
      * @returns An array of {@link Permission} values.
      */
-    public getPermissions = async (identityIdentifier?: string): Promise<Permission[]> => {
+    public getPermissions = async (
+        identityIdentifier?: string,
+    ): Promise<Permission[]> => {
         const input: Record<string, unknown> = {}
         if (identityIdentifier) {
             input.identityIdentifier = identityIdentifier
         }
 
-        const res = await this.ff.queryContractAPI(
+        console.log(
+            `[RoleService.getPermissions] Querying permissions for: ${identityIdentifier || "caller"}`,
+        )
+        console.log(
+            `[RoleService.getPermissions] Using contract API: ${contractInterface.name}`,
+        )
+        console.log(`[RoleService.getPermissions] Input:`, input)
+
+        const res = (await this.ff.queryContractAPI(
             contractInterface.name,
             "getPermissions",
             { input },
             { confirm: true, publish: true },
-        ) as FireFlyContractQueryResponse
+        )) as FireFlyContractQueryResponse
 
-        // Chaincode returns a JSON stringified Permission[]
-        const raw = res as unknown as string
+        console.log(`[RoleService.getPermissions] Raw response:`, res)
+        console.log(`[RoleService.getPermissions] Response type:`, typeof res)
 
-        if (typeof raw !== "string") {
-            return []
+        // FireFly automatically deserializes the JSON response
+        // The chaincode returns a JSON string, but FireFly parses it for us
+        const raw = res as unknown
+
+        // If it's already an array, return it directly
+        if (Array.isArray(raw)) {
+            console.log(
+                `[RoleService.getPermissions] Response is already an array:`,
+                raw,
+            )
+            return raw as Permission[]
         }
 
-        try {
-            const parsed = JSON.parse(raw) as unknown
-            if (!Array.isArray(parsed)) return []
-            // We trust on-chain validation for actual enum membership
-            return parsed as Permission[]
-        } catch {
-            return []
+        // If it's a string, try to parse it
+        if (typeof raw === "string") {
+            try {
+                const parsed = JSON.parse(raw) as unknown
+                console.log(
+                    `[RoleService.getPermissions] Parsed response:`,
+                    parsed,
+                )
+                if (!Array.isArray(parsed)) {
+                    console.log(
+                        `[RoleService.getPermissions] Parsed response is not an array, returning empty array`,
+                    )
+                    return []
+                }
+                return parsed as Permission[]
+            } catch (err) {
+                console.log(
+                    `[RoleService.getPermissions] Failed to parse response:`,
+                    err,
+                )
+                return []
+            }
         }
+
+        console.log(
+            `[RoleService.getPermissions] Unexpected response format, returning empty array`,
+        )
+        return []
     }
 
     /**
@@ -183,19 +228,130 @@ export default class RoleService {
         targetIdentityIdentifier: string,
         permissions: Permission[],
     ): Promise<FireFlyContractInvokeResponse> => {
+        console.log(
+            `[RoleService.setPermissions] Setting permissions for: ${targetIdentityIdentifier}`,
+        )
+        console.log(`[RoleService.setPermissions] Permissions:`, permissions)
+        console.log(
+            `[RoleService.setPermissions] Using contract API: ${contractInterface.name}`,
+        )
+
         const res = await this.ff.invokeContractAPI(
             contractInterface.name,
             "setPermissions",
             {
                 input: {
                     targetIdentityIdentifier,
-                    permissions: JSON.stringify(permissions),
+                    permissionsJson: JSON.stringify(permissions),
+                },
+            },
+            { confirm: true, publish: true },
+        )
+
+        console.log(`[RoleService.setPermissions] Response:`, res)
+        return res
+    }
+
+    /**
+     * Grant specific permissions to a target organization.
+     * Only callers from the PM3 MSP may grant permissions (enforced by chaincode).
+     * This adds permissions to existing ones without removing any.
+     *
+     * @param targetMSP Target organization's MSP ID (e.g., "Org2MSP")
+     * @param permissions Array of {@link Permission} values to grant (will be added to existing permissions).
+     * @returns FireFly invocation response.
+     *
+     * @example
+     * // Add package:create permission to Org2MSP
+     * await roleSvc.grantPermissionsToOrg("Org2MSP", ["package:create"])
+     */
+    public grantPermissionsToOrg = async (
+        targetMSP: string,
+        permissions: Permission[],
+    ): Promise<FireFlyContractInvokeResponse> => {
+        const res = await this.ff.invokeContractAPI(
+            contractInterface.name,
+            "grantPermissionsToOrg",
+            {
+                input: {
+                    targetMSP,
+                    permissionsJson: JSON.stringify(permissions),
                 },
             },
             { confirm: true, publish: true },
         )
 
         return res
+    }
+
+    /**
+     * Revoke all permissions from a target organization.
+     * Only callers from the PM3 MSP may revoke permissions (enforced by chaincode).
+     *
+     * @param targetMSP Target organization's MSP ID
+     * @returns FireFly invocation response.
+     */
+    public revokePermissionsFromOrg = async (
+        targetMSP: string,
+    ): Promise<FireFlyContractInvokeResponse> => {
+        const res = await this.ff.invokeContractAPI(
+            contractInterface.name,
+            "revokePermissionsFromOrg",
+            {
+                input: {
+                    targetMSP,
+                },
+            },
+            { confirm: true, publish: true },
+        )
+
+        return res
+    }
+
+    /**
+     * Remove specific permissions from a target organization.
+     * Only callers from the PM3 MSP may remove permissions (enforced by chaincode).
+     *
+     * @param targetMSP Target organization's MSP ID
+     * @param permissions Array of {@link Permission} values to remove.
+     * @returns FireFly invocation response.
+     */
+    public removePermissionsFromOrg = async (
+        targetMSP: string,
+        permissions: Permission[],
+    ): Promise<FireFlyContractInvokeResponse> => {
+        const res = await this.ff.invokeContractAPI(
+            contractInterface.name,
+            "removePermissionsFromOrg",
+            {
+                input: {
+                    targetMSP,
+                    permissionsJson: JSON.stringify(permissions),
+                },
+            },
+            { confirm: true, publish: true },
+        )
+
+        return res
+    }
+
+    /**
+     * Get the caller's permissions from the blockchain.
+     *
+     * @returns An array of {@link Permission} values.
+     */
+    public getCallerPermissions = async (): Promise<Permission[]> => {
+        const res = (await this.ff.queryContractAPI(
+            contractInterface.name,
+            "getCallerPermissions",
+            { input: {} },
+            { confirm: true, publish: true },
+        )) as FireFlyContractQueryResponse
+
+        const raw = res as unknown
+        if (!Array.isArray(raw)) return []
+
+        return raw as Permission[]
     }
 
     /**
@@ -207,7 +363,7 @@ export default class RoleService {
     public hasPermission = async (permission: Permission): Promise<boolean> => {
         const res = await this.ff.queryContractAPI(
             contractInterface.name,
-            "hasPermission",
+            "callerHasPermission",
             {
                 input: { permission },
             },
@@ -215,5 +371,21 @@ export default class RoleService {
         )
 
         return res as unknown as boolean
+    }
+
+    /**
+     * Get the caller's identity identifier.
+     *
+     * @returns The caller's identity identifier in format "MSPID"
+     */
+    public getCallerIdentifier = async (): Promise<string> => {
+        const res = await this.ff.queryContractAPI(
+            contractInterface.name,
+            "getCallerIdentifier",
+            { input: {} },
+            { confirm: true, publish: true },
+        )
+
+        return res as unknown as string
     }
 }

@@ -37,7 +37,7 @@
                     }
                 },
                 {
-                    "name": "permissions",
+                    "name": "permissionsJson",
                     "schema": {
                         "type": "string"
                     }
@@ -46,7 +46,89 @@
             "returns": []
         },
         {
-            "name": "hasPermission",
+            "name": "grantPermissionsToOrg",
+            "pathname": "",
+            "description": "Grant specific permissions to a target organization. Only PM3 may call this function.",
+            "params": [
+                {
+                    "name": "targetMSP",
+                    "schema": {
+                        "type": "string"
+                    }
+                },
+                {
+                    "name": "permissionsJson",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "returns": []
+        },
+        {
+            "name": "revokePermissionsFromOrg",
+            "pathname": "",
+            "description": "Revoke all permissions from a target organization. Only PM3 may call this function.",
+            "params": [
+                {
+                    "name": "targetMSP",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "returns": []
+        },
+        {
+            "name": "removePermissionsFromOrg",
+            "pathname": "",
+            "description": "Remove specific permissions from a target organization. Only PM3 may call this function.",
+            "params": [
+                {
+                    "name": "targetMSP",
+                    "schema": {
+                        "type": "string"
+                    }
+                },
+                {
+                    "name": "permissionsJson",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "returns": []
+        },
+        {
+            "name": "getCallerIdentifier",
+            "pathname": "",
+            "description": "Get the caller's identity identifier in format 'MSPID'.",
+            "params": [],
+            "returns": [
+                {
+                    "name": "",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "getCallerPermissions",
+            "pathname": "",
+            "description": "Fetch the caller's permissions from the blockchain. Returns an array of Permission strings that the caller has been granted.",
+            "params": [],
+            "returns": [
+                {
+                    "name": "",
+                    "schema": {
+                        "type": "array"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "callerHasPermission",
             "pathname": "",
             "description": "Check whether the caller has the supplied permission, based on stored permissions.",
             "params": [

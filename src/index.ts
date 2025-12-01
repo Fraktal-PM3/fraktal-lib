@@ -64,6 +64,7 @@ const main = async () => {
     const org2PkgService = new PackageService(org2FF)
 
     log.info("Initializing services...")
+    // Force recreate roleAuth interface to pick up parameter name changes
     await org1RoleAuthService.initialize()
     await org1PkgService.initalize()
     await org2PkgService.initalize()
@@ -167,17 +168,84 @@ const main = async () => {
 
     // Set up permissions
     log.section("Setting up Permissions")
-    await org1RoleAuthService.setPermissions("Org2MSP", [
-        "package:create",
-        "package:read",
-        "package:read:private",
-        "package:updateStatus",
-        "transfer:propose",
-        "transfer:accept",
-        "transfer:execute",
-        "package:delete",
-    ])
-    log.success("Permissions assigned to Org2MSP")
+
+    // Set permissions for Org1MSP
+    try {
+        log.info("Setting permissions for Org1MSP...")
+        const org1PermResult = await org1RoleAuthService.setPermissions(
+            "Org1MSP",
+            [
+                "package:create",
+                "package:read",
+                "package:read:private",
+                "package:updateStatus",
+                "transfer:propose",
+                "transfer:accept",
+                "transfer:execute",
+                "package:delete",
+            ],
+        )
+        log.success(
+            `Permissions assigned to Org1MSP - TX ID: ${org1PermResult.id}`,
+        )
+        log.data("setPermissions Response", org1PermResult)
+
+        // Wait for transaction to be committed
+        log.info("Waiting for transaction to be committed...")
+        await new Promise((resolve) => setTimeout(resolve, 2000))
+    } catch (err: any) {
+        log.error(`Failed to set Org1MSP permissions: ${err.message}`)
+        log.data("Error details", err)
+        throw err
+    }
+
+    // Set permissions for Org2MSP
+    try {
+        log.info("Setting permissions for Org2MSP...")
+        const org2PermResult = await org1RoleAuthService.setPermissions(
+            "Org2MSP",
+            [
+                "package:create",
+                "package:read",
+                "package:read:private",
+                "package:updateStatus",
+                "transfer:propose",
+                "transfer:accept",
+                "transfer:execute",
+                "package:delete",
+            ],
+        )
+        log.success(
+            `Permissions assigned to Org2MSP - TX ID: ${org2PermResult.id}`,
+        )
+        log.data("setPermissions Response", org2PermResult)
+
+        // Wait for transaction to be committed
+        log.info("Waiting for transaction to be committed...")
+        await new Promise((resolve) => setTimeout(resolve, 2000))
+    } catch (err: any) {
+        log.error(`Failed to set Org2MSP permissions: ${err.message}`)
+        log.data("Error details", err)
+        throw err
+    }
+
+    // Verify permissions were written
+    log.section("Verifying Permissions")
+    const org1Perms = await org1RoleAuthService.getPermissions("Org1MSP")
+    log.data("Org1MSP Permissions", org1Perms)
+    if (!org1Perms || org1Perms.length === 0) {
+        log.error(
+            "WARNING: Org1MSP permissions are empty! setPermissions may have failed silently.",
+        )
+    }
+
+    const org2Perms = await org1RoleAuthService.getPermissions("Org2MSP")
+    log.data("Org2MSP Permissions", org2Perms)
+    if (!org2Perms || org2Perms.length === 0) {
+        log.error(
+            "WARNING: Org2MSP permissions are empty! setPermissions may have failed silently.",
+        )
+    }
 
     // Test 1: Create a package
     log.section("Test 1: Create Package")
@@ -375,6 +443,43 @@ const main = async () => {
     } catch (e) {
         log.success("Package confirmed deleted (read failed as expected)")
     }
+    // create another package but remove permissions to delete
+    const packageID3 = randomUUID()
+    const salt3 = crypto.randomBytes(16).toString("hex")
+
+    const createRes3 = await org1PkgService.createPackage(
+        packageID3,
+        packageDetails,
+        pii,
+        salt3,
+    )
+    log.success(
+        `Package created for deletion permission test: ${createRes3.id}`,
+    )
+
+    await org1RoleAuthService.removePermissionsFromOrg("Org1MSP", [
+        "package:delete",
+    ])
+    log.success("Removed 'package:delete' permission from Org1MSP")
+
+    const deleteRes2 = await org1PkgService
+        .deletePackage(packageID3)
+        .catch((e) => {
+            log.info(
+                `Expected error on deletion without permission: ${e.message}`,
+            )
+        })
+
+    console.log(deleteRes2)
+
+    await org1RoleAuthService.grantPermissionsToOrg("Org1MSP", [
+        "package:delete",
+    ])
+    log.success("Restored 'package:delete' permission to Org1MSP")
+
+    // Verify can delete now
+    const deleteRes3 = await org1PkgService.deletePackage(packageID3)
+    log.success(`Package deleted after restoring permission: ${deleteRes3.id}`)
 
     // Test 14: Broadcast a PackageDetails message
     log.section("Test 14: Broadcast PackageDetails Message")

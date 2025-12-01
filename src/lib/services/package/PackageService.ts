@@ -5,27 +5,47 @@ import FireFly, {
     FireFlyContractQueryResponse,
     FireFlyDataResponse,
     FireFlyDatatypeResponse,
-    FireFlyEventBatchDelivery,
     FireFlyEventDelivery,
 } from "@hyperledger/firefly-sdk"
 import {
     PACKAGE_DETAILS_DT_NAME,
     PACKAGE_DETAILS_DT_VERSION,
     packageDetailsDatatypePayload,
+    TRANSFER_OFFER_DT_NAME,
+    TRANSFER_OFFER_DT_VERSION,
+    transferOfferDatatypePayload,
 } from "../../datatypes/package"
-import stringify from "json-stringify-deterministic"
-import sortKeysRecursive from "sort-keys-recursive"
 import contractInterface from "./interface.json"
-import crypto from "crypto"
 import {
+    AcceptTransferEvent,
+    BlockchainEventDelivery,
     BlockchainPackage,
+    CreatePackageEvent,
+    DeletePackageEvent,
+    FireFlyDatatypeMessage,
     PackageDetails,
     PackageDetailsWithId,
     PackageEventHandler,
     PackagePII,
+    ProposeTransferEvent,
     Status,
+    StatusUpdatedEvent,
     StoreObject,
+    TransferExecutedEvent,
 } from "./types.common"
+
+/**
+ * Type-safe event listener configuration mapping event names to their output types.
+ * @internal
+ */
+type EventTypeMap = {
+    CreatePackage: CreatePackageEvent
+    StatusUpdated: StatusUpdatedEvent
+    DeletePackage: DeletePackageEvent
+    ProposeTransfer: ProposeTransferEvent
+    AcceptTransfer: AcceptTransferEvent
+    TransferExecuted: TransferExecutedEvent
+}
 
 /**
  * High-level API for interacting with blockchain-based package management via Hyperledger FireFly.
@@ -47,8 +67,8 @@ import {
  *
  * @example Listening for Events
  * ```ts
- * await svc.onEvent("PackageCreated", (e) => {
- *   console.log("New package:", e.output, e.txid)
+ * await svc.onEvent("CreatePackage", (e) => {
+ *   console.log("New package:", e.output.externalId, e.txid)
  * })
  * ```
  *
@@ -72,6 +92,7 @@ export class PackageService {
     /**
      * Initializes the service:
      * - Ensures the private package **datatype** exists (creates if missing).
+     * - Ensures the **transfer offer datatype** exists (creates if missing).
      * - Ensures the **contract interface** and **contract API** exist (creates if missing).
      * - Registers blockchain **event listeners** for all interface events.
      *
@@ -81,6 +102,10 @@ export class PackageService {
     public initalize = async (): Promise<void> => {
         if (!(await this.dataTypeExists())) {
             await this.createDataType()
+        }
+
+        if (!(await this.transferOfferDataTypeExists())) {
+            await this.createTransferOfferDataType()
         }
 
         await this.createContractInterface()
@@ -139,9 +164,18 @@ export class PackageService {
                 for (const d of msg.data) {
                     const full = await this.ff.getData(d.id)
                     if (full?.validator == "json") {
+                        const messageData = {
+                            ...full,
+                            signingKey: msg.header.key,
+                            author: msg.header.author,
+                            header: msg.header,
+                        }
+                        // Dispatch to generic "message" handlers
                         this.handlers
                             .get("message")
-                            ?.forEach((handler) => handler({...full, signingKey: msg.header.key, author: msg.header.author }) )
+                            ?.forEach((handler) => handler(messageData))
+                        // Also attempt to dispatch to datatype-specific handlers
+                        // by checking value structure to match registered datatype names
                     }
                 }
             },
@@ -163,6 +197,10 @@ export class PackageService {
                         output: blockchainEvent.output,
                         timestamp: blockchainEvent.timestamp,
                         txid: blockchainEvent.tx.blockchainId,
+                        header: {
+                            key: "",
+                            author: "",
+                        },
                     })
                 })
             },
@@ -200,26 +238,100 @@ export class PackageService {
     }
 
     /**
-     * Registers a local handler for a blockchain event.
+     * Registers a local handler for a blockchain event with type-safe casting.
+     * Provides specific event types for known events, and a generic fallback for others.
      *
      * @param eventName Name of the blockchain event (as defined in the contract interface).
-     * @param handler Callback invoked for each event delivery.
+     * @param handler Callback invoked for each event delivery with properly typed event data.
      *
      * @example
      * ```ts
-     * await svc.onEvent("PackageUpdated", (e) => {
-     *   console.log(e.txid, e.timestamp, e.output)
+     * // Type-safe listener for CreatePackage event
+     * await svc.onEvent("CreatePackage", (e) => {
+     *   console.log(e.output.externalId, e.output.ownerOrgMSP)
+     * })
+     *
+     * // Type-safe listener for StatusUpdated event
+     * await svc.onEvent("StatusUpdated", (e) => {
+     *   console.log(e.output.externalId, e.output.status)
+     * })
+     *
+     * // Type-safe listener for ProposeTransfer event
+     * await svc.onEvent("ProposeTransfer", (e) => {
+     *   console.log(e.output.termsId, e.output.terms.fromMSP)
      * })
      * ```
      */
-    public onEvent = async (
+
+    // Overloads for type-safe blockchain event listeners
+    public onEvent(
+        eventName: "CreatePackage",
+        handler: (
+            event: BlockchainEventDelivery & { output: CreatePackageEvent },
+        ) => void,
+    ): Promise<void>
+
+    public onEvent(
+        eventName: "StatusUpdated",
+        handler: (
+            event: BlockchainEventDelivery & { output: StatusUpdatedEvent },
+        ) => void,
+    ): Promise<void>
+
+    public onEvent(
+        eventName: "DeletePackage",
+        handler: (
+            event: BlockchainEventDelivery & { output: DeletePackageEvent },
+        ) => void,
+    ): Promise<void>
+
+    public onEvent(
+        eventName: "ProposeTransfer",
+        handler: (
+            event: BlockchainEventDelivery & { output: ProposeTransferEvent },
+        ) => void,
+    ): Promise<void>
+
+    public onEvent(
+        eventName: "AcceptTransfer",
+        handler: (
+            event: BlockchainEventDelivery & { output: AcceptTransferEvent },
+        ) => void,
+    ): Promise<void>
+
+    public onEvent(
+        eventName: "TransferExecuted",
+        handler: (
+            event: BlockchainEventDelivery & { output: TransferExecutedEvent },
+        ) => void,
+    ): Promise<void>
+
+    // Generic message event listener for FireFly datatype messages
+    public onEvent(
+        eventName: "message",
+        handler: (event: FireFlyDatatypeMessage) => void,
+    ): Promise<void>
+
+    // Generic fallback for other event names
+    public onEvent(
         eventName: string,
-        handler: (...args: any) => void,
-    ): Promise<void> => {
+        handler: (
+            event: BlockchainEventDelivery | FireFlyDatatypeMessage,
+        ) => void,
+    ): Promise<void>
+
+    // Implementation - compatible with all overloads
+    public async onEvent(
+        eventName: string,
+        handler: (event: any) => void,
+    ): Promise<void> {
         if (!this.handlers.has(eventName)) {
             this.handlers.set(eventName, [])
         }
-        this.handlers.get(eventName)?.push(handler)
+        // Cast the handler to PackageEventHandler since it's compatible with both event types
+        this.handlers
+            .get(eventName)
+            ?.push(handler as unknown as PackageEventHandler)
     }
 
     /**
@@ -298,6 +410,77 @@ export class PackageService {
         return dataTypes[0]
     }
 
+    /**
+     * Creates and registers the "transfer offer" datatype with the FireFly instance.
+     *
+     * This asynchronous private helper builds the datatype payload (via
+     * transferOfferDatatypePayload()), then calls the FireFly client to create the
+     * datatype with publishing enabled and confirmation awaited.
+     *
+     * @private
+     * @async
+     * @returns A promise that resolves to the FireFly datatype creation response
+     *          (FireFlyDatatypeResponse) once the datatype has been published and
+     *          confirmed.
+     * @throws Will propagate any errors thrown by the payload builder or the FireFly
+     *         client's createDatatype call (for example network errors or API
+     *         validation failures).
+     * @remarks The created datatype is published (publish: true) and the call waits
+     *          for confirmation (confirm: true) before resolving.
+     */
+    private createTransferOfferDataType =
+        async (): Promise<FireFlyDatatypeResponse> => {
+            const payload = transferOfferDatatypePayload()
+            const dataType = await this.ff.createDatatype(payload, {
+                publish: true,
+                confirm: true,
+            })
+            return dataType
+        }
+    /**
+     * Determines whether the Transfer Offer data type (identified by TRANSFER_OFFER_DT_NAME and
+     * TRANSFER_OFFER_DT_VERSION) is present in the data type registry.
+     *
+     * The method queries the underlying data-type service via `this.ff.getDatatypes(...)` and returns
+     * true if at least one matching data type is returned.
+     *
+     * @returns A Promise that resolves to `true` if one or more matching data types exist, otherwise `false`.
+     *
+     * @throws Propagates any error thrown by `this.ff.getDatatypes`.
+     */
+    public transferOfferDataTypeExists = async (): Promise<boolean> => {
+        const dataTypes = await this.ff.getDatatypes({
+            name: TRANSFER_OFFER_DT_NAME,
+            version: TRANSFER_OFFER_DT_VERSION,
+        })
+        return dataTypes.length > 0
+    }
+
+    /**
+     * Retrieve the Transfer Offer FireFly datatype.
+     *
+     * This method first verifies that the Transfer Offer datatype exists by calling
+     * `transferOfferDataTypeExists()`. If the datatype is not present, it throws an Error.
+     * If it exists, the method queries the FireFly client (`this.ff.getDatatypes`) for
+     * datatypes matching the configured name and version and returns the first result.
+     *
+     * @throws {Error} If the Transfer Offer datatype does not exist.
+     * @throws {Error} If the underlying FireFly client call (`this.ff.getDatatypes`) fails.
+     * @returns {Promise<FireFlyDatatypeResponse>} A promise that resolves to the first matching FireFly datatype.
+     */
+    public getTransferOfferDataType =
+        async (): Promise<FireFlyDatatypeResponse> => {
+            if (!(await this.transferOfferDataTypeExists())) {
+                throw new Error("Transfer Offer Data type does not exist")
+            }
+
+            const dataTypes = await this.ff.getDatatypes({
+                name: TRANSFER_OFFER_DT_NAME,
+                version: TRANSFER_OFFER_DT_VERSION,
+            })
+            return dataTypes[0]
+        }
+
     // -------------------------
     // Blockchain Queries
     // -------------------------
@@ -347,6 +530,7 @@ export class PackageService {
      */
     public createPackage = async (
         externalId: string,
+        recipientOrgMSP: string,
         packageDetails: PackageDetails,
         pii: PackagePII,
         salt: string,
@@ -358,12 +542,13 @@ export class PackageService {
             {
                 input: {
                     externalId,
+                    recipientOrgMSP,
                 },
                 options: {
                     transientMap: {
                         pii: JSON.stringify(pii),
                         packageDetails: JSON.stringify(packageDetails),
-                        salt: salt.toString()
+                        salt: salt.toString(),
                     },
                 },
             },

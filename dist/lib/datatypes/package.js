@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.packageDetailsDatatypePayload = exports.PackageDetailsSchema2020 = exports.PACKAGE_DETAILS_DT_VERSION = exports.PACKAGE_DETAILS_DT_NAME = void 0;
+exports.transferOfferDatatypePayload = exports.TransferOfferSchema2020 = exports.TRANSFER_OFFER_DT_VERSION = exports.TRANSFER_OFFER_DT_NAME = exports.packageDetailsDatatypePayload = exports.PackageDetailsSchema2020 = exports.PACKAGE_DETAILS_DT_VERSION = exports.PACKAGE_DETAILS_DT_NAME = void 0;
 exports.PACKAGE_DETAILS_DT_NAME = "PackageDetails";
 exports.PACKAGE_DETAILS_DT_VERSION = "1.0.0";
 exports.PackageDetailsSchema2020 = {
@@ -15,6 +15,7 @@ exports.PackageDetailsSchema2020 = {
         size: { $ref: "#/definitions/Size" },
         weightKg: { type: "number" },
         urgency: { $ref: "#/definitions/Urgency" },
+        price: { $ref: "#/definitions/Price" },
     },
     required: [
         "id",
@@ -37,7 +38,8 @@ exports.PackageDetailsSchema2020 = {
             additionalProperties: false,
         },
         Size: {
-            type: "object",
+            type: "object", dISO: { type: "string" },
+            expiryISO: { type: ["string", "null"] },
             properties: {
                 width: { type: "number" },
                 height: { type: "number" },
@@ -50,6 +52,9 @@ exports.PackageDetailsSchema2020 = {
             type: "string",
             enum: ["high", "medium", "low", "none"],
         },
+        Price: {
+            type: "number"
+        }
     },
 };
 const packageDetailsDatatypePayload = (namespace = "default") => ({
@@ -62,4 +67,38 @@ const packageDetailsDatatypePayload = (namespace = "default") => ({
     },
 });
 exports.packageDetailsDatatypePayload = packageDetailsDatatypePayload;
+exports.TRANSFER_OFFER_DT_NAME = "TransferOffer";
+exports.TRANSFER_OFFER_DT_VERSION = "1.0.0";
+exports.TransferOfferSchema2020 = {
+    $schema: "https://json-schema.org/draft/2020-12/schema",
+    $id: `ff://default/${exports.TRANSFER_OFFER_DT_NAME}/${exports.TRANSFER_OFFER_DT_VERSION}`,
+    title: "TransferOffer",
+    type: "object",
+    properties: {
+        externalPackageId: { type: "string" },
+        fromMSP: { type: "string" },
+        toMSP: { type: "string" },
+        price: { type: "number" },
+        createdISO: { type: "string" },
+        expiryISO: { type: ["string", "null"] },
+    },
+    required: [
+        "externalPackageId",
+        "fromMSP",
+        "toMSP",
+        "price",
+        "createdISO",
+    ],
+    additionalProperties: false,
+};
+const transferOfferDatatypePayload = (namespace = "default") => ({
+    name: exports.TRANSFER_OFFER_DT_NAME,
+    version: exports.TRANSFER_OFFER_DT_VERSION,
+    validator: "json",
+    value: {
+        ...exports.TransferOfferSchema2020,
+        $id: `ff://${namespace}/${exports.TRANSFER_OFFER_DT_NAME}/${exports.TRANSFER_OFFER_DT_VERSION}`,
+    },
+});
+exports.transferOfferDatatypePayload = transferOfferDatatypePayload;
 //# sourceMappingURL=package.js.map

@@ -14,6 +14,12 @@
                     "schema": {
                         "type": "string"
                     }
+                },
+                {
+                    "name": "recipientOrgMSP",
+                    "schema": {
+                        "type": "string"
+                    }
                 }
             ],
             "returns": []
@@ -281,7 +287,10 @@
             "details": {
                 "type": "object",
                 "properties": {
-                    "id": {
+                    "externalId": {
+                        "type": "string"
+                    },
+                    "ownerOrgMSP": {
                         "type": "string"
                     },
                     "status": {
@@ -296,6 +305,15 @@
                             "failed",
                             "proposed"
                         ]
+                    },
+                    "recipientOrgMSP": {
+                        "type": "string"
+                    },
+                    "packageDetailsAndPIIHash": {
+                        "type": "string"
+                    },
+                    "caller": {
+                        "type": "string"
                     }
                 }
             }
@@ -306,7 +324,7 @@
             "details": {
                 "type": "object",
                 "properties": {
-                    "id": {
+                    "externalId": {
                         "type": "string"
                     },
                     "status": {
@@ -321,6 +339,9 @@
                             "failed",
                             "proposed"
                         ]
+                    },
+                    "caller": {
+                        "type": "string"
                     }
                 }
             }
@@ -331,7 +352,23 @@
             "details": {
                 "type": "object",
                 "properties": {
-                    "id": {
+                    "externalId": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "pending",
+                            "ready_for_pickup",
+                            "picked_up",
+                            "in_transit",
+                            "delivered",
+                            "succeeded",
+                            "failed",
+                            "proposed"
+                        ]
+                    },
+                    "caller": {
                         "type": "string"
                     }
                 }
@@ -348,6 +385,27 @@
                     },
                     "termsId": {
                         "type": "string"
+                    },
+                    "terms": {
+                        "extenalPackageId": {
+                            "type": "string"
+                        },
+                        "fromMSP": {
+                            "type": "string"
+                        },
+                        "expiryISO": {
+                            "type": "string",
+                            "nullable": true
+                        },
+                        "createdISO": {
+                            "type": "string"
+                        },
+                        "toMSP": {
+                            "type": "string"
+                        }
+                    },
+                    "caller": {
+                        "type": "string"
                     }
                 }
             }
@@ -362,6 +420,9 @@
                         "type": "string"
                     },
                     "termsId": {
+                        "type": "string"
+                    },
+                    "caller": {
                         "type": "string"
                     }
                 }
@@ -380,6 +441,9 @@
                         "type": "string"
                     },
                     "newOwner": {
+                        "type": "string"
+                    },
+                    "caller": {
                         "type": "string"
                     }
                 }

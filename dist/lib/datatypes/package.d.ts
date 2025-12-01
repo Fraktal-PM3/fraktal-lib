@@ -50,6 +50,12 @@ export declare const PackageDetailsSchema2020: {
         };
         Size: {
             type: string;
+            dISO: {
+                type: string;
+            };
+            expiryISO: {
+                type: string[];
+            };
             properties: {
                 width: {
                     type: string;
@@ -83,9 +89,6 @@ export declare const TransferOfferSchema2020: {
     type: string;
     properties: {
         externalPackageId: {
-            type: string;
-        };
-        termsId: {
             type: string;
         };
         fromMSP: {

@@ -221,7 +221,7 @@ const main = async () => {
         dropLocation: packageDetails.dropLocation.address,
         weight: packageDetails.weightKg,
     });
-    const createRes = await org1PkgService.createPackage(packageID, packageDetails, pii, salt);
+    const createRes = await org1PkgService.createPackage(packageID, "Org1MSP", packageDetails, pii, salt);
     log.success(`Package created: ${createRes.id}`);
     log.data("Creation Response", {
         id: createRes.id,
@@ -318,7 +318,7 @@ const main = async () => {
     log.section("Test 12: Create Package for Deletion");
     const packageID2 = (0, crypto_1.randomUUID)();
     const salt2 = crypto_1.default.randomBytes(16).toString("hex");
-    const createRes2 = await org1PkgService.createPackage(packageID2, packageDetails, pii, salt2);
+    const createRes2 = await org1PkgService.createPackage(packageID2, "Org1MSP", packageDetails, pii, salt2);
     log.success(`Package created for deletion test: ${createRes2.id}`);
     // Test 13: Delete package
     log.section("Test 13: Delete Package");

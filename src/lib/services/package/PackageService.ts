@@ -5,7 +5,7 @@ import FireFly, {
     FireFlyContractQueryResponse,
     FireFlyDataResponse,
     FireFlyDatatypeResponse,
-    FireFlyEventDelivery
+    FireFlyEventDelivery,
 } from "@hyperledger/firefly-sdk"
 import {
     PACKAGE_DETAILS_DT_NAME,
@@ -171,9 +171,9 @@ export class PackageService {
                             header: msg.header,
                         }
                         // Dispatch to generic "message" handlers
-                        this.handlers.get("message")?.forEach((handler) =>
-                            handler(messageData),
-                        )
+                        this.handlers
+                            .get("message")
+                            ?.forEach((handler) => handler(messageData))
                         // Also attempt to dispatch to datatype-specific handlers
                         // by checking value structure to match registered datatype names
                     }
@@ -266,32 +266,44 @@ export class PackageService {
     // Overloads for type-safe blockchain event listeners
     public onEvent(
         eventName: "CreatePackage",
-        handler: (event: BlockchainEventDelivery & { output: CreatePackageEvent }) => void,
+        handler: (
+            event: BlockchainEventDelivery & { output: CreatePackageEvent },
+        ) => void,
     ): Promise<void>
 
     public onEvent(
         eventName: "StatusUpdated",
-        handler: (event: BlockchainEventDelivery & { output: StatusUpdatedEvent }) => void,
+        handler: (
+            event: BlockchainEventDelivery & { output: StatusUpdatedEvent },
+        ) => void,
     ): Promise<void>
 
     public onEvent(
         eventName: "DeletePackage",
-        handler: (event: BlockchainEventDelivery & { output: DeletePackageEvent }) => void,
+        handler: (
+            event: BlockchainEventDelivery & { output: DeletePackageEvent },
+        ) => void,
     ): Promise<void>
 
     public onEvent(
         eventName: "ProposeTransfer",
-        handler: (event: BlockchainEventDelivery & { output: ProposeTransferEvent }) => void,
+        handler: (
+            event: BlockchainEventDelivery & { output: ProposeTransferEvent },
+        ) => void,
     ): Promise<void>
 
     public onEvent(
         eventName: "AcceptTransfer",
-        handler: (event: BlockchainEventDelivery & { output: AcceptTransferEvent }) => void,
+        handler: (
+            event: BlockchainEventDelivery & { output: AcceptTransferEvent },
+        ) => void,
     ): Promise<void>
 
     public onEvent(
         eventName: "TransferExecuted",
-        handler: (event: BlockchainEventDelivery & { output: TransferExecutedEvent }) => void,
+        handler: (
+            event: BlockchainEventDelivery & { output: TransferExecutedEvent },
+        ) => void,
     ): Promise<void>
 
     // Generic message event listener for FireFly datatype messages
@@ -303,7 +315,9 @@ export class PackageService {
     // Generic fallback for other event names
     public onEvent(
         eventName: string,
-        handler: (event: BlockchainEventDelivery | FireFlyDatatypeMessage) => void,
+        handler: (
+            event: BlockchainEventDelivery | FireFlyDatatypeMessage,
+        ) => void,
     ): Promise<void>
 
     // Implementation - compatible with all overloads
@@ -315,7 +329,9 @@ export class PackageService {
             this.handlers.set(eventName, [])
         }
         // Cast the handler to PackageEventHandler since it's compatible with both event types
-        this.handlers.get(eventName)?.push(handler as unknown as PackageEventHandler)
+        this.handlers
+            .get(eventName)
+            ?.push(handler as unknown as PackageEventHandler)
     }
 
     /**
@@ -394,7 +410,6 @@ export class PackageService {
         return dataTypes[0]
     }
 
-
     /**
      * Creates and registers the "transfer offer" datatype with the FireFly instance.
      *
@@ -413,14 +428,15 @@ export class PackageService {
      * @remarks The created datatype is published (publish: true) and the call waits
      *          for confirmation (confirm: true) before resolving.
      */
-    private createTransferOfferDataType = async (): Promise<FireFlyDatatypeResponse> => {
-        const payload = transferOfferDatatypePayload()
-        const dataType = await this.ff.createDatatype(payload, {
-            publish: true,
-            confirm: true,
-        })
-        return dataType
-    }
+    private createTransferOfferDataType =
+        async (): Promise<FireFlyDatatypeResponse> => {
+            const payload = transferOfferDatatypePayload()
+            const dataType = await this.ff.createDatatype(payload, {
+                publish: true,
+                confirm: true,
+            })
+            return dataType
+        }
     /**
      * Determines whether the Transfer Offer data type (identified by TRANSFER_OFFER_DT_NAME and
      * TRANSFER_OFFER_DT_VERSION) is present in the data type registry.
@@ -452,17 +468,18 @@ export class PackageService {
      * @throws {Error} If the underlying FireFly client call (`this.ff.getDatatypes`) fails.
      * @returns {Promise<FireFlyDatatypeResponse>} A promise that resolves to the first matching FireFly datatype.
      */
-    public getTransferOfferDataType = async (): Promise<FireFlyDatatypeResponse> => {
-        if (!(await this.transferOfferDataTypeExists())) {
-            throw new Error("Transfer Offer Data type does not exist")
-        }
+    public getTransferOfferDataType =
+        async (): Promise<FireFlyDatatypeResponse> => {
+            if (!(await this.transferOfferDataTypeExists())) {
+                throw new Error("Transfer Offer Data type does not exist")
+            }
 
-        const dataTypes = await this.ff.getDatatypes({
-            name: TRANSFER_OFFER_DT_NAME,
-            version: TRANSFER_OFFER_DT_VERSION,
-        })
-        return dataTypes[0]
-    }
+            const dataTypes = await this.ff.getDatatypes({
+                name: TRANSFER_OFFER_DT_NAME,
+                version: TRANSFER_OFFER_DT_VERSION,
+            })
+            return dataTypes[0]
+        }
 
     // -------------------------
     // Blockchain Queries
@@ -513,6 +530,7 @@ export class PackageService {
      */
     public createPackage = async (
         externalId: string,
+        recipientOrgMSP: string,
         packageDetails: PackageDetails,
         pii: PackagePII,
         salt: string,
@@ -524,6 +542,7 @@ export class PackageService {
             {
                 input: {
                     externalId,
+                    recipientOrgMSP,
                 },
                 options: {
                     transientMap: {

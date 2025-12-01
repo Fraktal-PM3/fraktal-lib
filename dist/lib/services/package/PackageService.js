@@ -46,6 +46,7 @@ class PackageService {
         /**
          * Initializes the service:
          * - Ensures the private package **datatype** exists (creates if missing).
+         * - Ensures the **transfer offer datatype** exists (creates if missing).
          * - Ensures the **contract interface** and **contract API** exist (creates if missing).
          * - Registers blockchain **event listeners** for all interface events.
          *
@@ -55,6 +56,9 @@ class PackageService {
         this.initalize = async () => {
             if (!(await this.dataTypeExists())) {
                 await this.createDataType();
+            }
+            if (!(await this.transferOfferDataTypeExists())) {
+                await this.createTransferOfferDataType();
             }
             await this.createContractInterface();
             await this.createContractAPI();
@@ -106,7 +110,9 @@ class PackageService {
                             header: msg.header,
                         };
                         // Dispatch to generic "message" handlers
-                        this.handlers.get("message")?.forEach((handler) => handler(messageData));
+                        this.handlers
+                            .get("message")
+                            ?.forEach((handler) => handler(messageData));
                         // Also attempt to dispatch to datatype-specific handlers
                         // by checking value structure to match registered datatype names
                     }
@@ -229,6 +235,72 @@ class PackageService {
             });
             return dataTypes[0];
         };
+        /**
+         * Creates and registers the "transfer offer" datatype with the FireFly instance.
+         *
+         * This asynchronous private helper builds the datatype payload (via
+         * transferOfferDatatypePayload()), then calls the FireFly client to create the
+         * datatype with publishing enabled and confirmation awaited.
+         *
+         * @private
+         * @async
+         * @returns A promise that resolves to the FireFly datatype creation response
+         *          (FireFlyDatatypeResponse) once the datatype has been published and
+         *          confirmed.
+         * @throws Will propagate any errors thrown by the payload builder or the FireFly
+         *         client's createDatatype call (for example network errors or API
+         *         validation failures).
+         * @remarks The created datatype is published (publish: true) and the call waits
+         *          for confirmation (confirm: true) before resolving.
+         */
+        this.createTransferOfferDataType = async () => {
+            const payload = (0, package_1.transferOfferDatatypePayload)();
+            const dataType = await this.ff.createDatatype(payload, {
+                publish: true,
+                confirm: true,
+            });
+            return dataType;
+        };
+        /**
+         * Determines whether the Transfer Offer data type (identified by TRANSFER_OFFER_DT_NAME and
+         * TRANSFER_OFFER_DT_VERSION) is present in the data type registry.
+         *
+         * The method queries the underlying data-type service via `this.ff.getDatatypes(...)` and returns
+         * true if at least one matching data type is returned.
+         *
+         * @returns A Promise that resolves to `true` if one or more matching data types exist, otherwise `false`.
+         *
+         * @throws Propagates any error thrown by `this.ff.getDatatypes`.
+         */
+        this.transferOfferDataTypeExists = async () => {
+            const dataTypes = await this.ff.getDatatypes({
+                name: package_1.TRANSFER_OFFER_DT_NAME,
+                version: package_1.TRANSFER_OFFER_DT_VERSION,
+            });
+            return dataTypes.length > 0;
+        };
+        /**
+         * Retrieve the Transfer Offer FireFly datatype.
+         *
+         * This method first verifies that the Transfer Offer datatype exists by calling
+         * `transferOfferDataTypeExists()`. If the datatype is not present, it throws an Error.
+         * If it exists, the method queries the FireFly client (`this.ff.getDatatypes`) for
+         * datatypes matching the configured name and version and returns the first result.
+         *
+         * @throws {Error} If the Transfer Offer datatype does not exist.
+         * @throws {Error} If the underlying FireFly client call (`this.ff.getDatatypes`) fails.
+         * @returns {Promise<FireFlyDatatypeResponse>} A promise that resolves to the first matching FireFly datatype.
+         */
+        this.getTransferOfferDataType = async () => {
+            if (!(await this.transferOfferDataTypeExists())) {
+                throw new Error("Transfer Offer Data type does not exist");
+            }
+            const dataTypes = await this.ff.getDatatypes({
+                name: package_1.TRANSFER_OFFER_DT_NAME,
+                version: package_1.TRANSFER_OFFER_DT_VERSION,
+            });
+            return dataTypes[0];
+        };
         // -------------------------
         // Blockchain Queries
         // -------------------------
@@ -270,10 +342,11 @@ class PackageService {
          * await svc.createPackage("pkg-001", details, { name: "Alice" }, saltHex);
          * ```
          */
-        this.createPackage = async (externalId, packageDetails, pii, salt, broadcast = true) => {
+        this.createPackage = async (externalId, recipientOrgMSP, packageDetails, pii, salt, broadcast = true) => {
             const res = await this.ff.invokeContractAPI(interface_json_1.default.name, "CreatePackage", {
                 input: {
                     externalId,
+                    recipientOrgMSP,
                 },
                 options: {
                     transientMap: {
@@ -467,7 +540,9 @@ class PackageService {
             this.handlers.set(eventName, []);
         }
         // Cast the handler to PackageEventHandler since it's compatible with both event types
-        this.handlers.get(eventName)?.push(handler);
+        this.handlers
+            .get(eventName)
+            ?.push(handler);
     }
 }
 exports.PackageService = PackageService;

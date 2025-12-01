@@ -38,7 +38,8 @@ export const PackageDetailsSchema2020 = {
             additionalProperties: false,
         },
         Size: {
-            type: "object",
+            type: "object",dISO: { type: "string" },
+        expiryISO: { type: ["string", "null"] },
             properties: {
                 width: { type: "number" },
                 height: { type: "number" },
@@ -77,7 +78,6 @@ export const TransferOfferSchema2020 = {
     type: "object",
     properties: {
         externalPackageId: { type: "string" },
-        termsId: { type: "string" },
         fromMSP: { type: "string" },
         toMSP: { type: "string" },
         price: { type: "number" },
@@ -104,3 +104,4 @@ export const transferOfferDatatypePayload = (namespace = "default"): FireFlyData
         $id: `ff://${namespace}/${TRANSFER_OFFER_DT_NAME}/${TRANSFER_OFFER_DT_VERSION}`,
     },
 })
+

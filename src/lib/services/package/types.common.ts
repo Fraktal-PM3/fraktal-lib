@@ -184,6 +184,9 @@ export type BlockchainPackage = {
 
     /* The org MSP that is the recipient of the package transfer */
     recipientOrgMSP: string
+
+    /* The org that originally created the package is the sender */
+    senderOrgMSP: string
 }
 
 /**

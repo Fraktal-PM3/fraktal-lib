@@ -323,6 +323,9 @@
                     "recipientOrgMSP": {
                         "type": "string"
                     },
+                    "senderOrgMSP": {
+                        "type": "string"
+                    },
                     "packageDetailsAndPIIHash": {
                         "type": "string"
                     },

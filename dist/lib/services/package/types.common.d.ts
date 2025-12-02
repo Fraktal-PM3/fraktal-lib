@@ -173,6 +173,7 @@ export type BlockchainPackage = {
      */
     packageDetailsAndPIIHash: string;
     recipientOrgMSP: string;
+    senderOrgMSP: string;
 };
 /**
  * Convenience type: public package details with a system-assigned identifier.

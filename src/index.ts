@@ -1,32 +1,23 @@
+import FireFly, { FireFlyOptionsInput } from "@hyperledger/firefly-sdk"
+import crypto, { randomUUID } from "crypto"
+import { PackageService } from "./lib/services/package/PackageService"
 import {
     PackagePII,
     Status,
     Urgency,
     isPackageDetailsMessage,
-    isTransferOfferMessage,
-    CreatePackageEvent,
-    StatusUpdatedEvent,
-    DeletePackageEvent,
-    ProposeTransferEvent,
-    AcceptTransferEvent,
-    TransferExecutedEvent,
+    isTransferOfferMessage
 } from "./lib/services/package/types.common"
-import FireFly, { FireFlyOptionsInput } from "@hyperledger/firefly-sdk"
-import { PackageService } from "./lib/services/package/PackageService"
-import crypto, { randomUUID } from "crypto"
 import RoleService from "./lib/services/role/RoleService"
 
 // Exports for docs
-export { PackageService } from "./lib/services/package/PackageService"
-export * from "./lib/services/package/types.common"
 export {
     PACKAGE_DETAILS_DT_NAME,
-    PACKAGE_DETAILS_DT_VERSION,
-    packageDetailsDatatypePayload,
-    TRANSFER_OFFER_DT_NAME,
-    TRANSFER_OFFER_DT_VERSION,
-    transferOfferDatatypePayload,
+    PACKAGE_DETAILS_DT_VERSION, TRANSFER_OFFER_DT_NAME,
+    TRANSFER_OFFER_DT_VERSION, packageDetailsDatatypePayload, transferOfferDatatypePayload
 } from "./lib/datatypes/package"
+export { PackageService } from "./lib/services/package/PackageService"
+export * from "./lib/services/package/types.common"
 
 const log = {
     section: (title: string) => {
@@ -528,6 +519,89 @@ const main = async () => {
     )
 }
 
+// const test = async () => {
+
+//     const ff1 = new FireFly({
+//         host: "http://localhost:8000",
+//         namespace: "default",
+//     })
+
+//     const ff2 = new FireFly({
+//         host: "http://localhost:8001",
+//         namespace: "default",
+//     })
+
+//     const pkgService1 = new PackageService(ff1)
+//     const pkgService2 = new PackageService(ff2)
+//     await pkgService1.initalize()
+//     await pkgService2.initalize()
+
+//     const packageID = randomUUID()
+//     const salt = crypto.randomBytes(16).toString("hex")
+//     const packageDetails = {
+//         pickupLocation: {
+//             address: "1234 Industrial Rd, San Francisco, CA",
+//             lat: 37.7749,
+//             lng: -122.4194,
+//         },
+//         dropLocation: {
+//             address: "5678 Residential St, Oakland, CA",
+//             lat: 37.8044,
+//             lng: -122.2711,
+//         },
+//         size: {
+//             width: 1.5,
+//             height: 1.2,
+//             depth: 0.8,
+//         },
+//         weightKg: 25.5,
+//         urgency: Urgency.MEDIUM,
+//     }
+
+//     const pii: PackagePII = {
+//         recipientName: "Jane Smith",
+//         recipientPhone: "+1-555-0123",
+//         company: "Tech Corp",
+//     }
+
+//     const res1 = await pkgService1.createPackage(
+//         packageID,
+//         "Org1MSP",
+//         packageDetails,
+//         pii,
+//         salt,
+//     )
+
+//     const res2 = await pkgService1.readPackageDetailsAndPII(packageID)
+
+//     console.log("Package created:", res1)
+//     console.log("Package details and PII:", res2)
+
+//     const termsId = randomUUID()
+
+//     await pkgService1.proposeTransfer(
+//         packageID,
+//         "Org2MSP",
+//         { id: termsId, price: 500.0, salt },
+//         new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+//     )
+
+//     await pkgService2.acceptTransfer(packageID, termsId, {
+//         salt,
+//         price: 500.0,
+//     })
+
+//     await pkgService1.executeTransfer(
+//         packageID,
+//         termsId,
+//         { salt, pii, packageDetails },
+//     )
+
+//     const pii2 = await pkgService2.readPackageDetailsAndPII(packageID)
+
+//     console.log("Package details and PII after transfer:", pii2)
+// }
+
 // Only run main when this file is executed directly (not imported)
 if (require.main === module) {
     main().catch((err) => {
@@ -536,3 +610,5 @@ if (require.main === module) {
         process.exit(1)
     })
 }
+
+// test()

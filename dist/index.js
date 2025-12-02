@@ -39,23 +39,23 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.transferOfferDatatypePayload = exports.TRANSFER_OFFER_DT_VERSION = exports.TRANSFER_OFFER_DT_NAME = exports.packageDetailsDatatypePayload = exports.PACKAGE_DETAILS_DT_VERSION = exports.PACKAGE_DETAILS_DT_NAME = exports.PackageService = void 0;
-const types_common_1 = require("./lib/services/package/types.common");
+exports.PackageService = exports.transferOfferDatatypePayload = exports.packageDetailsDatatypePayload = exports.TRANSFER_OFFER_DT_VERSION = exports.TRANSFER_OFFER_DT_NAME = exports.PACKAGE_DETAILS_DT_VERSION = exports.PACKAGE_DETAILS_DT_NAME = void 0;
 const firefly_sdk_1 = __importDefault(require("@hyperledger/firefly-sdk"));
-const PackageService_1 = require("./lib/services/package/PackageService");
 const crypto_1 = __importStar(require("crypto"));
+const PackageService_1 = require("./lib/services/package/PackageService");
+const types_common_1 = require("./lib/services/package/types.common");
 const RoleService_1 = __importDefault(require("./lib/services/role/RoleService"));
 // Exports for docs
-var PackageService_2 = require("./lib/services/package/PackageService");
-Object.defineProperty(exports, "PackageService", { enumerable: true, get: function () { return PackageService_2.PackageService; } });
-__exportStar(require("./lib/services/package/types.common"), exports);
 var package_1 = require("./lib/datatypes/package");
 Object.defineProperty(exports, "PACKAGE_DETAILS_DT_NAME", { enumerable: true, get: function () { return package_1.PACKAGE_DETAILS_DT_NAME; } });
 Object.defineProperty(exports, "PACKAGE_DETAILS_DT_VERSION", { enumerable: true, get: function () { return package_1.PACKAGE_DETAILS_DT_VERSION; } });
-Object.defineProperty(exports, "packageDetailsDatatypePayload", { enumerable: true, get: function () { return package_1.packageDetailsDatatypePayload; } });
 Object.defineProperty(exports, "TRANSFER_OFFER_DT_NAME", { enumerable: true, get: function () { return package_1.TRANSFER_OFFER_DT_NAME; } });
 Object.defineProperty(exports, "TRANSFER_OFFER_DT_VERSION", { enumerable: true, get: function () { return package_1.TRANSFER_OFFER_DT_VERSION; } });
+Object.defineProperty(exports, "packageDetailsDatatypePayload", { enumerable: true, get: function () { return package_1.packageDetailsDatatypePayload; } });
 Object.defineProperty(exports, "transferOfferDatatypePayload", { enumerable: true, get: function () { return package_1.transferOfferDatatypePayload; } });
+var PackageService_2 = require("./lib/services/package/PackageService");
+Object.defineProperty(exports, "PackageService", { enumerable: true, get: function () { return PackageService_2.PackageService; } });
+__exportStar(require("./lib/services/package/types.common"), exports);
 const log = {
     section: (title) => {
         console.log(`\n${"=".repeat(60)}`);
@@ -175,18 +175,18 @@ const main = async () => {
     await new Promise((resolve) => setTimeout(resolve, 1500));
     log.success("FireFly listeners ready");
     // Set up permissions
-    // log.section("Setting up Permissions")
-    // await org1RoleAuthService.setPermissions("Org2MSP", [
-    //     "package:create",
-    //     "package:read",
-    //     "package:read:private",
-    //     "package:updateStatus",
-    //     "transfer:propose",
-    //     "transfer:accept",
-    //     "transfer:execute",
-    //     "package:delete",
-    // ])
-    // log.success("Permissions assigned to Org2MSP")
+    log.section("Setting up Permissions");
+    await org1RoleAuthService.setPermissions("Org2MSP", [
+        "package:create",
+        "package:read",
+        "package:read:private",
+        "package:updateStatus",
+        "transfer:propose",
+        "transfer:accept",
+        "transfer:execute",
+        "package:delete",
+    ]);
+    log.success("Permissions assigned to Org2MSP");
     // Test 1: Create a package
     log.section("Test 1: Create Package");
     const packageID = (0, crypto_1.randomUUID)();
@@ -461,6 +461,74 @@ const main = async () => {
     log.section("All Tests Completed Successfully!");
     log.success("The fraktal-lib package service is working correctly with FireFly");
 };
+// const test = async () => {
+//     const ff1 = new FireFly({
+//         host: "http://localhost:8000",
+//         namespace: "default",
+//     })
+//     const ff2 = new FireFly({
+//         host: "http://localhost:8001",
+//         namespace: "default",
+//     })
+//     const pkgService1 = new PackageService(ff1)
+//     const pkgService2 = new PackageService(ff2)
+//     await pkgService1.initalize()
+//     await pkgService2.initalize()
+//     const packageID = randomUUID()
+//     const salt = crypto.randomBytes(16).toString("hex")
+//     const packageDetails = {
+//         pickupLocation: {
+//             address: "1234 Industrial Rd, San Francisco, CA",
+//             lat: 37.7749,
+//             lng: -122.4194,
+//         },
+//         dropLocation: {
+//             address: "5678 Residential St, Oakland, CA",
+//             lat: 37.8044,
+//             lng: -122.2711,
+//         },
+//         size: {
+//             width: 1.5,
+//             height: 1.2,
+//             depth: 0.8,
+//         },
+//         weightKg: 25.5,
+//         urgency: Urgency.MEDIUM,
+//     }
+//     const pii: PackagePII = {
+//         recipientName: "Jane Smith",
+//         recipientPhone: "+1-555-0123",
+//         company: "Tech Corp",
+//     }
+//     const res1 = await pkgService1.createPackage(
+//         packageID,
+//         "Org1MSP",
+//         packageDetails,
+//         pii,
+//         salt,
+//     )
+//     const res2 = await pkgService1.readPackageDetailsAndPII(packageID)
+//     console.log("Package created:", res1)
+//     console.log("Package details and PII:", res2)
+//     const termsId = randomUUID()
+//     await pkgService1.proposeTransfer(
+//         packageID,
+//         "Org2MSP",
+//         { id: termsId, price: 500.0, salt },
+//         new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+//     )
+//     await pkgService2.acceptTransfer(packageID, termsId, {
+//         salt,
+//         price: 500.0,
+//     })
+//     await pkgService1.executeTransfer(
+//         packageID,
+//         termsId,
+//         { salt, pii, packageDetails },
+//     )
+//     const pii2 = await pkgService2.readPackageDetailsAndPII(packageID)
+//     console.log("Package details and PII after transfer:", pii2)
+// }
 // Only run main when this file is executed directly (not imported)
 if (require.main === module) {
     main().catch((err) => {
@@ -469,4 +537,5 @@ if (require.main === module) {
         process.exit(1);
     });
 }
+// test()
 //# sourceMappingURL=index.js.map

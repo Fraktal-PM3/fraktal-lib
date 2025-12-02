@@ -172,6 +172,7 @@ export type BlockchainPackage = {
      * Enables integrity checks without disclosing private content.
      */
     packageDetailsAndPIIHash: string;
+    recipientOrgMSP: string;
 };
 /**
  * Convenience type: public package details with a system-assigned identifier.

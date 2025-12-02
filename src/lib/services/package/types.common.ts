@@ -181,6 +181,9 @@ export type BlockchainPackage = {
      * Enables integrity checks without disclosing private content.
      */
     packageDetailsAndPIIHash: string
+
+    /* The org MSP that is the recipient of the package transfer */
+    recipientOrgMSP: string
 }
 
 /**

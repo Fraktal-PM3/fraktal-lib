@@ -1,5 +1,5 @@
 import FireFly, { FireFlyContractInvokeResponse, FireFlyContractQueryResponse, FireFlyDataResponse, FireFlyDatatypeResponse } from "@hyperledger/firefly-sdk";
-import { AcceptTransferEvent, BlockchainEventDelivery, BlockchainPackage, CreatePackageEvent, DeletePackageEvent, FireFlyDatatypeMessage, PackageDetails, PackageDetailsWithId, PackagePII, ProposeTransferEvent, Status, StatusUpdatedEvent, StoreObject, TransferExecutedEvent } from "./types.common";
+import { AcceptTransferEvent, BlockchainPackage, CreatePackageEvent, DeletePackageEvent, PackageDetails, PackageDetailsWithId, PackagePII, ProposeTransferEvent, Status, StatusUpdatedEvent, StoreObject, TransferExecutedEvent, TransferToPM3Event, FireFlyDatatypeMessage, BlockchainEventDelivery } from "./types.common";
 /**
  * High-level API for interacting with blockchain-based package management via Hyperledger FireFly.
  *
@@ -115,6 +115,9 @@ export declare class PackageService {
     }) => void): Promise<void>;
     onEvent(eventName: "TransferExecuted", handler: (event: BlockchainEventDelivery & {
         output: TransferExecutedEvent;
+    }) => void): Promise<void>;
+    onEvent(eventName: "TransferToPM3", handler: (event: BlockchainEventDelivery & {
+        output: TransferToPM3Event;
     }) => void): Promise<void>;
     onEvent(eventName: "message", handler: (event: FireFlyDatatypeMessage) => void): Promise<void>;
     onEvent(eventName: string, handler: (event: BlockchainEventDelivery | FireFlyDatatypeMessage) => void): Promise<void>;
@@ -348,6 +351,6 @@ export declare class PackageService {
      * be "Delivered" to be eligible for transfer to PM3 and the reciepint org must be the owner (and the one executing the transfer).
      * @param externalId Package external ID.
      * @returns FireFly invocation response.
-    */
+     */
     transferToPM3: (externalId: string) => Promise<FireFlyContractInvokeResponse>;
 }

@@ -319,6 +319,13 @@ export type TransferExecutedEvent = {
     caller: string;
 };
 /**
+ * Event emitted when a package is transferred to PM3 (final delivery).
+ */
+export type TransferToPM3Event = {
+    /** External identifier of the package. */
+    externalId: string;
+};
+/**
  * Type guard to check if a message is a PackageDetails datatype message.
  * @param msg The message to check.
  * @returns true if the message contains PackageDetails data.

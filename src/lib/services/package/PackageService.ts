@@ -18,11 +18,9 @@ import {
 import contractInterface from "./interface.json"
 import {
     AcceptTransferEvent,
-    BlockchainEventDelivery,
     BlockchainPackage,
     CreatePackageEvent,
     DeletePackageEvent,
-    FireFlyDatatypeMessage,
     PackageDetails,
     PackageDetailsWithId,
     PackageEventHandler,
@@ -32,6 +30,9 @@ import {
     StatusUpdatedEvent,
     StoreObject,
     TransferExecutedEvent,
+    TransferToPM3Event,
+    FireFlyDatatypeMessage,
+    BlockchainEventDelivery,
 } from "./types.common"
 
 /**
@@ -45,6 +46,7 @@ type EventTypeMap = {
     ProposeTransfer: ProposeTransferEvent
     AcceptTransfer: AcceptTransferEvent
     TransferExecuted: TransferExecutedEvent
+    TransferToPM3: TransferToPM3Event
 }
 
 /**
@@ -303,6 +305,13 @@ export class PackageService {
         eventName: "TransferExecuted",
         handler: (
             event: BlockchainEventDelivery & { output: TransferExecutedEvent },
+        ) => void,
+    ): Promise<void>
+
+    public onEvent(
+        eventName: "TransferToPM3",
+        handler: (
+            event: BlockchainEventDelivery & { output: TransferToPM3Event },
         ) => void,
     ): Promise<void>
 
@@ -847,7 +856,7 @@ export class PackageService {
      * be "Delivered" to be eligible for transfer to PM3 and the reciepint org must be the owner (and the one executing the transfer).
      * @param externalId Package external ID.
      * @returns FireFly invocation response.
-    */
+     */
     public transferToPM3 = async (
         externalId: string,
     ): Promise<FireFlyContractInvokeResponse> => {

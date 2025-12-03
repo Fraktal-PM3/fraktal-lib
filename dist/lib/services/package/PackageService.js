@@ -539,7 +539,7 @@ class PackageService {
          * be "Delivered" to be eligible for transfer to PM3 and the reciepint org must be the owner (and the one executing the transfer).
          * @param externalId Package external ID.
          * @returns FireFly invocation response.
-        */
+         */
         this.transferToPM3 = async (externalId) => {
             const res = await this.ff.invokeContractAPI(interface_json_1.default.name, "TransferToPM3", {
                 input: { externalId },

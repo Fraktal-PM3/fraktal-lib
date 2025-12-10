@@ -1,5 +1,5 @@
 import FireFly, { FireFlyContractInvokeResponse, FireFlyContractQueryResponse, FireFlyDataResponse, FireFlyDatatypeResponse } from "@hyperledger/firefly-sdk";
-import { AcceptTransferEvent, BlockchainPackage, CreatePackageEvent, DeletePackageEvent, PackageDetails, PackageDetailsWithId, PackagePII, ProposeTransferEvent, Status, StatusUpdatedEvent, StoreObject, TransferExecutedEvent, TransferToPM3Event, FireFlyDatatypeMessage, BlockchainEventDelivery } from "./types.common";
+import { BlockchainPackage, CreatePackageEvent, DeletePackageEvent, PackageDetails, PackageDetailsWithId, PackagePII, Status, StatusUpdatedEvent, StatusUpdatedAfterProposeEvent, StatusUpdatedAfterAcceptEvent, StoreObject, TransferExecutedEvent, TransferToPM3Event, TransferTerms, FireFlyDatatypeMessage, BlockchainEventDelivery } from "./types.common";
 /**
  * High-level API for interacting with blockchain-based package management via Hyperledger FireFly.
  *
@@ -92,9 +92,9 @@ export declare class PackageService {
      *   console.log(e.output.externalId, e.output.status)
      * })
      *
-     * // Type-safe listener for ProposeTransfer event
-     * await svc.onEvent("ProposeTransfer", (e) => {
-     *   console.log(e.output.termsId, e.output.terms.fromMSP)
+     * // Type-safe listener for StatusUpdatedAfterPropose event
+     * await svc.onEvent("StatusUpdatedAfterPropose", (e) => {
+     *   console.log(e.output.externalId, e.output.termsID, e.output.status)
      * })
      * ```
      */
@@ -107,11 +107,11 @@ export declare class PackageService {
     onEvent(eventName: "DeletePackage", handler: (event: BlockchainEventDelivery & {
         output: DeletePackageEvent;
     }) => void): Promise<void>;
-    onEvent(eventName: "ProposeTransfer", handler: (event: BlockchainEventDelivery & {
-        output: ProposeTransferEvent;
+    onEvent(eventName: "StatusUpdatedAfterPropose", handler: (event: BlockchainEventDelivery & {
+        output: StatusUpdatedAfterProposeEvent;
     }) => void): Promise<void>;
-    onEvent(eventName: "AcceptTransfer", handler: (event: BlockchainEventDelivery & {
-        output: AcceptTransferEvent;
+    onEvent(eventName: "StatusUpdatedAfterAccept", handler: (event: BlockchainEventDelivery & {
+        output: StatusUpdatedAfterAcceptEvent;
     }) => void): Promise<void>;
     onEvent(eventName: "TransferExecuted", handler: (event: BlockchainEventDelivery & {
         output: TransferExecutedEvent;
@@ -276,73 +276,69 @@ export declare class PackageService {
     checkPackageDetailsAndPIIHash: (externalId: string, expectedHash: string) => Promise<boolean>;
     /**
      * Proposes a transfer to another organization.
+     * Stores transfer terms in the proposer's implicit private data collection.
      *
      * @param externalId Package external ID.
-     * @param toMSP MSP ID of the recipient organization.
-     * @param terms Proposed terms `{ id, price, salt }`. The `price` and `salt` are sent privately via `transientMap`.
-     * @param expiryISO Optional ISO-8601 expiry time for the offer.
+     * @param termsId Unique identifier for this transfer proposal (must be a UUID).
+     * @param transferTerms Full transfer terms including price and all details.
      * @returns FireFlyContractInvokeResponse.
      *
      * @example
      * ```ts
-     * const salt = crypto.randomBytes(16).toString("hex")
-     * await svc.proposeTransfer("pkg-001", "Org2MSP", { id: "t-123", price: 42.5, salt });
+     * const termsId = crypto.randomUUID()
+     * const transferTerms = {
+     *   externalPackageId: "pkg-001",
+     *   fromMSP: "Org1MSP",
+     *   toMSP: "Org2MSP",
+     *   createdISO: new Date().toISOString(),
+     *   expiryISO: null,
+     *   price: 42.5
+     * }
+     * await svc.proposeTransfer("pkg-001", termsId, transferTerms)
      * ```
      */
-    proposeTransfer: (externalId: string, toMSP: string, terms: {
-        price: number;
-        id: string;
-        salt: string;
-    }, expiryISO?: string) => Promise<FireFlyContractInvokeResponse>;
+    proposeTransfer: (externalId: string, termsId: string, transferTerms: TransferTerms) => Promise<FireFlyContractInvokeResponse>;
     /**
-     * Reads the public transfer terms for a given terms ID.
-     * @param termsId Transfer terms identifier.
-     * @returns The transfer terms as a JSON string.
-     */
-    readTransferTerms: (termsId: string) => Promise<FireFlyContractQueryResponse>;
-    /**
-     * Reads the private transfer terms for a given terms ID.
-     * Only the recipient organization (toMSP) can read their private terms.
-     * @param termsId Transfer terms identifier.
-     * @returns The private transfer terms as a JSON string.
-     */
-    readPrivateTransferTerms: (termsId: string) => Promise<FireFlyContractQueryResponse>;
-    /**
-     * Accepts a previously proposed transfer.
-     *
-     * The chaincode internally verifies the package details and PII hash
-     * by calling CheckPackageDetailsAndPIIHash. The caller must provide
-     * the private transfer terms via transient map for verification.
+     * Updates the package status to PROPOSED after proposing a transfer.
+     * This should be called after ProposeTransfer completes successfully.
+     * Creates a proposal record on-chain for tracking.
      *
      * @param externalId Package external ID.
-     * @param termsId Identifier of the terms being accepted.
-     * @param privateTransferTerms Private fields (e.g., `salt`, `price`) sent via `transientMap`.
+     * @param termsId Transfer proposal identifier (UUID).
+     * @param toMSP MSP ID of the recipient organization.
      * @returns FireFly invocation response.
      */
-    acceptTransfer: (externalId: string, termsId: string, privateTransferTerms: {
-        salt: string;
-        price: number;
-    }) => Promise<Required<{
-        created?: string;
-        error?: string;
-        id?: string;
-        input?: any;
-        namespace?: string;
-        output?: any;
-        plugin?: string;
-        retry?: string;
-        status?: string;
-        tx?: string;
-        type?: "blockchain_pin_batch" | "blockchain_network_action" | "blockchain_deploy" | "blockchain_invoke" | "sharedstorage_upload_batch" | "sharedstorage_upload_blob" | "sharedstorage_upload_value" | "sharedstorage_download_batch" | "sharedstorage_download_blob" | "dataexchange_send_batch" | "dataexchange_send_blob" | "token_create_pool" | "token_activate_pool" | "token_transfer" | "token_approval";
-        updated?: string;
-    }>>;
+    updateStatusAfterPropose: (externalId: string, termsId: string, toMSP: string) => Promise<FireFlyContractInvokeResponse>;
     /**
-     * Executes a confirmed transfer (finalization step).
+     * Updates the package status to READY_FOR_PICKUP after accepting a transfer.
+     * This should be called after AcceptTransfer completes successfully.
+     * Updates the proposal status to "accepted" on-chain.
      *
      * @param externalId Package external ID.
-     * @param termsId Transfer terms ID.
-     * @param storeObject The same data passed in CreatePackage, including salt, PII, and packageDetails. For integrity verification
-     * and transfer of data to the new owner.
+     * @param termsId Transfer proposal identifier (UUID).
+     * @returns FireFly invocation response.
+     */
+    updateStatusAfterAccept: (externalId: string, termsId: string) => Promise<FireFlyContractInvokeResponse>;
+    /**
+     * Accepts a previously proposed transfer.
+     * Stores transfer terms in the acceptor's implicit private data collection.
+     * The acceptor must provide the complete transfer terms for verification.
+     *
+     * @param externalId Package external ID.
+     * @param termsId Identifier of the terms being accepted (must be a UUID).
+     * @param transferTerms Complete transfer terms including all fields.
+     * @returns FireFly invocation response.
+     */
+    acceptTransfer: (externalId: string, termsId: string, transferTerms: TransferTerms) => Promise<FireFlyContractInvokeResponse>;
+    /**
+     * Executes a confirmed transfer (finalization step).
+     * Transfers ownership of the package from the current owner to the recipient.
+     * Moves the private package data to the recipient's collection.
+     *
+     * @param externalId Package external ID.
+     * @param termsId Transfer terms ID (must be a UUID).
+     * @param storeObject The same data passed in CreatePackage, including salt, PII, and packageDetails.
+     *                    Used for integrity verification and transfer of data to the new owner.
      * @returns FireFly invocation response.
      */
     executeTransfer: (externalId: string, termsId: string, storeObject: StoreObject) => Promise<FireFlyContractInvokeResponse>;

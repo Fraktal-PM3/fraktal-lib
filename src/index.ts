@@ -94,24 +94,24 @@ const main = async () => {
         log.data("FULL DeletePackage Event Data", event)
     })
 
-    await org1PkgService.onEvent("ProposeTransfer", (event) => {
-        log.info(`[Org1] ProposeTransfer event received`)
-        log.data("FULL ProposeTransfer Event Data", event)
+    await org1PkgService.onEvent("StatusUpdatedAfterPropose", (event) => {
+        log.info(`[Org1] StatusUpdatedAfterPropose event received`)
+        log.data("FULL StatusUpdatedAfterPropose Event Data", event)
     })
 
-    await org2PkgService.onEvent("ProposeTransfer", (event) => {
-        log.info(`[Org2] ProposeTransfer event received`)
-        log.data("FULL ProposeTransfer Event Data", event)
+    await org2PkgService.onEvent("StatusUpdatedAfterPropose", (event) => {
+        log.info(`[Org2] StatusUpdatedAfterPropose event received`)
+        log.data("FULL StatusUpdatedAfterPropose Event Data", event)
     })
 
-    await org1PkgService.onEvent("AcceptTransfer", (event) => {
-        log.info(`[Org1] AcceptTransfer event received`)
-        log.data("FULL AcceptTransfer Event Data", event)
+    await org1PkgService.onEvent("StatusUpdatedAfterAccept", (event) => {
+        log.info(`[Org1] StatusUpdatedAfterAccept event received`)
+        log.data("FULL StatusUpdatedAfterAccept Event Data", event)
     })
 
-    await org2PkgService.onEvent("AcceptTransfer", (event) => {
-        log.info(`[Org2] AcceptTransfer event received`)
-        log.data("FULL AcceptTransfer Event Data", event)
+    await org2PkgService.onEvent("StatusUpdatedAfterAccept", (event) => {
+        log.info(`[Org2] StatusUpdatedAfterAccept event received`)
+        log.data("FULL StatusUpdatedAfterAccept Event Data", event)
     })
 
     await org1PkgService.onEvent("TransferExecuted", (event) => {
@@ -279,38 +279,64 @@ const main = async () => {
     log.section("Test 7: Propose Transfer to Org2")
     const termsId = randomUUID()
     const transferPrice = 500.0
-    const transferSalt = crypto.randomBytes(16).toString("hex")
+
+    const transferTerms = {
+        externalPackageId: packageID,
+        fromMSP: "Org1MSP",
+        toMSP: "Org2MSP",
+        createdISO: new Date().toISOString(),
+        expiryISO: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        price: transferPrice,
+    }
 
     log.data("Transfer proposal", {
         termsId,
         packageID,
-        fromOrg: "Org1MSP",
-        toOrg: "Org2MSP",
+        fromOrg: transferTerms.fromMSP,
+        toOrg: transferTerms.toMSP,
         price: transferPrice,
     })
 
     const proposeRes = await org1PkgService.proposeTransfer(
         packageID,
-        "Org2MSP",
-        { id: termsId, price: transferPrice, salt: transferSalt },
-        new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days
+        termsId,
+        transferTerms,
     )
     log.success(`Transfer proposed: ${proposeRes.id}`)
 
-    // Test 8: Read transfer terms
-    log.section("Test 8: Read Transfer Terms")
-    const publicTerms = await org1PkgService.readTransferTerms(termsId)
-    log.data("Public Transfer Terms", publicTerms)
+    // Update status after propose
+    const proposeStatusRes = await org1PkgService.updateStatusAfterPropose(
+        packageID,
+        termsId,
+        "Org2MSP",
+    )
+    log.success(`Status updated after propose: ${proposeStatusRes.id}`)
+
+    // Test 8: Check package status after propose
+    log.section("Test 8: Check Status After Propose")
+    const pkgAfterPropose = await org1PkgService.readBlockchainPackage(packageID)
+    log.data("Package after propose", {
+        externalId: pkgAfterPropose.externalId,
+        status: pkgAfterPropose.status,
+    })
 
     // Test 9: Accept transfer (from Org2)
     log.section("Test 9: Accept Transfer (Org2)")
     log.info(`Org2 accepting transfer for terms: ${termsId}...`)
 
-    const acceptRes = await org2PkgService.acceptTransfer(packageID, termsId, {
-        salt: transferSalt,
-        price: transferPrice,
-    })
+    const acceptRes = await org2PkgService.acceptTransfer(
+        packageID,
+        termsId,
+        transferTerms,
+    )
     log.success(`Transfer accepted: ${acceptRes.id}`)
+
+    // Update status after accept
+    const acceptStatusRes = await org2PkgService.updateStatusAfterAccept(
+        packageID,
+        termsId,
+    )
+    log.success(`Status updated after accept: ${acceptStatusRes.id}`)
 
     const pkgAfterAccept = await org2PkgService.readBlockchainPackage(packageID)
     log.info(`Package status after accept: ${pkgAfterAccept.status}`)
@@ -519,88 +545,6 @@ const main = async () => {
     )
 }
 
-// const test = async () => {
-
-//     const ff1 = new FireFly({
-//         host: "http://localhost:8000",
-//         namespace: "default",
-//     })
-
-//     const ff2 = new FireFly({
-//         host: "http://localhost:8001",
-//         namespace: "default",
-//     })
-
-//     const pkgService1 = new PackageService(ff1)
-//     const pkgService2 = new PackageService(ff2)
-//     await pkgService1.initalize()
-//     await pkgService2.initalize()
-
-//     const packageID = randomUUID()
-//     const salt = crypto.randomBytes(16).toString("hex")
-//     const packageDetails = {
-//         pickupLocation: {
-//             address: "1234 Industrial Rd, San Francisco, CA",
-//             lat: 37.7749,
-//             lng: -122.4194,
-//         },
-//         dropLocation: {
-//             address: "5678 Residential St, Oakland, CA",
-//             lat: 37.8044,
-//             lng: -122.2711,
-//         },
-//         size: {
-//             width: 1.5,
-//             height: 1.2,
-//             depth: 0.8,
-//         },
-//         weightKg: 25.5,
-//         urgency: Urgency.MEDIUM,
-//     }
-
-//     const pii: PackagePII = {
-//         recipientName: "Jane Smith",
-//         recipientPhone: "+1-555-0123",
-//         company: "Tech Corp",
-//     }
-
-//     const res1 = await pkgService1.createPackage(
-//         packageID,
-//         "Org1MSP",
-//         packageDetails,
-//         pii,
-//         salt,
-//     )
-
-//     const res2 = await pkgService1.readPackageDetailsAndPII(packageID)
-
-//     console.log("Package created:", res1)
-//     console.log("Package details and PII:", res2)
-
-//     const termsId = randomUUID()
-
-//     await pkgService1.proposeTransfer(
-//         packageID,
-//         "Org2MSP",
-//         { id: termsId, price: 500.0, salt },
-//         new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-//     )
-
-//     await pkgService2.acceptTransfer(packageID, termsId, {
-//         salt,
-//         price: 500.0,
-//     })
-
-//     await pkgService1.executeTransfer(
-//         packageID,
-//         termsId,
-//         { salt, pii, packageDetails },
-//     )
-
-//     const pii2 = await pkgService2.readPackageDetailsAndPII(packageID)
-
-//     console.log("Package details and PII after transfer:", pii2)
-// }
 
 // Only run main when this file is executed directly (not imported)
 if (require.main === module) {

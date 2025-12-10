@@ -134,7 +134,7 @@
         {
             "name": "ProposeTransfer",
             "pathname": "",
-            "description": "Propose a transfer of a package to another org. Only current owner can propose. Transient key required: 'privateTransferTerms' (JSON).",
+            "description": "Propose a transfer of a package to another org. Only current owner can propose. Transient key required: 'transferTerms' (JSON).",
             "params": [
                 {
                     "name": "externalId",
@@ -143,7 +143,27 @@
                     }
                 },
                 {
-                    "name": "termsId",
+                    "name": "termsID",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "returns": []
+        },
+        {
+            "name": "UpdateStatusAfterPropose",
+            "pathname": "",
+            "description": "Update package status to PROPOSED after proposing a transfer. Creates a proposal record on-chain.",
+            "params": [
+                {
+                    "name": "externalId",
+                    "schema": {
+                        "type": "string"
+                    }
+                },
+                {
+                    "name": "termsID",
                     "schema": {
                         "type": "string"
                     }
@@ -153,18 +173,25 @@
                     "schema": {
                         "type": "string"
                     }
-                },
+                }
+            ],
+            "returns": []
+        },
+        {
+            "name": "UpdateStatusAfterAccept",
+            "pathname": "",
+            "description": "Update package status to READY_FOR_PICKUP after accepting a transfer. Updates proposal status to 'accepted'.",
+            "params": [
                 {
-                    "name": "createdISO",
+                    "name": "externalId",
                     "schema": {
                         "type": "string"
                     }
                 },
                 {
-                    "name": "expiryISO",
+                    "name": "termsID",
                     "schema": {
-                        "type": "string",
-                        "nullable": true
+                        "type": "string"
                     }
                 }
             ],
@@ -198,51 +225,9 @@
             ]
         },
         {
-            "name": "ReadTransferTerms",
-            "pathname": "",
-            "description": "Read public transfer terms by termsId.",
-            "params": [
-                {
-                    "name": "termsId",
-                    "schema": {
-                        "type": "string"
-                    }
-                }
-            ],
-            "returns": [
-                {
-                    "name": "",
-                    "schema": {
-                        "type": "string"
-                    }
-                }
-            ]
-        },
-        {
-            "name": "ReadPrivateTransferTerms",
-            "pathname": "",
-            "description": "Read private transfer terms by termsId. Only the recipient org (toMSP) may read from its implicit collection.",
-            "params": [
-                {
-                    "name": "termsId",
-                    "schema": {
-                        "type": "string"
-                    }
-                }
-            ],
-            "returns": [
-                {
-                    "name": "",
-                    "schema": {
-                        "type": "string"
-                    }
-                }
-            ]
-        },
-        {
             "name": "AcceptTransfer",
             "pathname": "",
-            "description": "Accept a transfer for a package. Only the recipient org (toMSP) may accept. Requires matching 'privateTransferTerms' in transient, and a verified packageDetailsAndPIIHash.",
+            "description": "Accept a transfer for a package. Only the recipient org (toMSP) may accept. Requires matching 'transferTerms' in transient.",
             "params": [
                 {
                     "name": "externalId",
@@ -251,7 +236,7 @@
                     }
                 },
                 {
-                    "name": "termsId",
+                    "name": "termsID",
                     "schema": {
                         "type": "string"
                     }
@@ -262,7 +247,7 @@
         {
             "name": "ExecuteTransfer",
             "pathname": "",
-            "description": "Execute the transfer of ownership for a package. Only the current owner org may execute after acceptance by the recipient org.",
+            "description": "Execute the transfer of ownership for a package. Only the current owner org may execute after acceptance by the recipient org. Requires 'storeObject' in transient.",
             "params": [
                 {
                     "name": "externalId",
@@ -271,7 +256,7 @@
                     }
                 },
                 {
-                    "name": "termsId",
+                    "name": "termsID",
                     "schema": {
                         "type": "string"
                     }
@@ -392,34 +377,29 @@
             }
         },
         {
-            "name": "ProposeTransfer",
-            "description": "Emitted when a transfer proposal is created",
+            "name": "StatusUpdatedAfterPropose",
+            "description": "Emitted when package status is updated to PROPOSED after proposing a transfer",
             "details": {
                 "type": "object",
                 "properties": {
                     "externalId": {
                         "type": "string"
                     },
-                    "termsId": {
+                    "termsID": {
                         "type": "string"
                     },
-                    "terms": {
-                        "extenalPackageId": {
-                            "type": "string"
-                        },
-                        "fromMSP": {
-                            "type": "string"
-                        },
-                        "expiryISO": {
-                            "type": "string",
-                            "nullable": true
-                        },
-                        "createdISO": {
-                            "type": "string"
-                        },
-                        "toMSP": {
-                            "type": "string"
-                        }
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "pending",
+                            "ready_for_pickup",
+                            "picked_up",
+                            "in_transit",
+                            "delivered",
+                            "succeeded",
+                            "failed",
+                            "proposed"
+                        ]
                     },
                     "caller": {
                         "type": "string"
@@ -428,16 +408,29 @@
             }
         },
         {
-            "name": "AcceptTransfer",
-            "description": "Emitted when a transfer is accepted",
+            "name": "StatusUpdatedAfterAccept",
+            "description": "Emitted when package status is updated to READY_FOR_PICKUP after accepting a transfer",
             "details": {
                 "type": "object",
                 "properties": {
                     "externalId": {
                         "type": "string"
                     },
-                    "termsId": {
+                    "termsID": {
                         "type": "string"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "pending",
+                            "ready_for_pickup",
+                            "picked_up",
+                            "in_transit",
+                            "delivered",
+                            "succeeded",
+                            "failed",
+                            "proposed"
+                        ]
                     },
                     "caller": {
                         "type": "string"

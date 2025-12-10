@@ -84,17 +84,8 @@ export enum TransferStatus {
 export type PackagePII = { [key: string]: any }
 
 /**
- * Private terms for a transfer that should not be public on-chain.
- */
-export type PrivateTransferTerms = {
-    /** Random salt used for hashing private transfer terms for integrity verification. */
-    salt: string
-    /** Price to transfer ownership (currency/context external). */
-    price: number
-}
-
-/**
- * Public transfer terms that identify the package and counterparties.
+ * Transfer terms combining both public and private fields.
+ * Used when proposing and accepting transfers.
  */
 export type TransferTerms = {
     /** External identifier of the package being transferred. */
@@ -109,28 +100,23 @@ export type TransferTerms = {
      * Optional ISO-8601 expiry timestamp.
      * If `null`/`undefined`, the proposal does not expire automatically.
      */
-    expiryISO: string | null | undefined
-    /**
-     * SHA256 hash of the private transfer terms.
-     * Used to verify integrity without revealing private data publicly.
-     */
-    privateTermsHash: string
+    expiryISO?: string | null
+    /** Price to transfer ownership (currency/context external). */
+    price: number
 }
 
 /**
- * A transfer instance and its state.
+ * Proposal instance stored on-chain for tracking transfer proposals.
  */
-export type Transfer = {
-    /** Public terms for this transfer. */
-    terms: TransferTerms
-    /** Current {@link TransferStatus} of the transfer. */
-    status: TransferStatus
-    /**
-     * Integrity hash of private terms or payloads associated with the transfer.
-     * @remarks
-     * Used to prove consistency without revealing private data publicly.
-     */
-    transferTermsHash: string
+export type Proposal = {
+    /** External identifier of the package. */
+    externalId: string
+    /** Unique identifier for this transfer proposal. */
+    termsID: string
+    /** MSP/organization targeted to receive the package. */
+    toMSP: string
+    /** Current status of the proposal (e.g., "active", "accepted"). */
+    status: string
 }
 
 /**
@@ -262,6 +248,10 @@ export type CreatePackageEvent = {
     ownerOrgMSP: string
     /** Initial status of the package. */
     status: Status
+    /** MSP/organization that is the intended recipient. */
+    recipientOrgMSP: string
+    /** MSP/organization that originally created the package (sender). */
+    senderOrgMSP: string
     /** Integrity hash of the package details and PII. */
     packageDetailsAndPIIHash: string
     /** Identity of the caller who created the package. */
@@ -293,38 +283,29 @@ export type DeletePackageEvent = {
 }
 
 /**
- * Event emitted when a transfer is proposed.
+ * Event emitted when package status is updated to PROPOSED after a transfer is proposed.
  */
-export type ProposeTransferEvent = {
-    /** External identifier of the package being transferred. */
+export type StatusUpdatedAfterProposeEvent = {
+    /** External identifier of the package. */
     externalId: string
     /** Identifier for this transfer proposal. */
-    termsId: string
-    /** Public transfer terms. */
-    terms: {
-        /** External identifier of the package (in transfer context). */
-        extenalPackageId?: string
-        /** MSP initiating the transfer. */
-        fromMSP: string
-        /** ISO-8601 creation timestamp. */
-        createdISO: string
-        /** MSP targeted to receive the package. */
-        toMSP: string
-        /** Optional ISO-8601 expiry timestamp. */
-        expiryISO: string | null | undefined
-    }
+    termsID: string
+    /** New status of the package (typically "proposed" or "in_transit"). */
+    status: Status
     /** Identity of the caller who proposed the transfer. */
     caller: string
 }
 
 /**
- * Event emitted when a transfer is accepted.
+ * Event emitted when package status is updated to READY_FOR_PICKUP after a transfer is accepted.
  */
-export type AcceptTransferEvent = {
+export type StatusUpdatedAfterAcceptEvent = {
     /** External identifier of the package. */
     externalId: string
     /** Identifier for the accepted transfer proposal. */
-    termsId: string
+    termsID: string
+    /** New status of the package (typically "ready_for_pickup"). */
+    status: Status
     /** Identity of the caller who accepted the transfer. */
     caller: string
 }

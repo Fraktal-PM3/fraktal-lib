@@ -227,6 +227,12 @@
                     "schema": {
                         "type": "string"
                     }
+                },
+                {
+                    "name": "expiryISO",
+                    "schema": {
+                        "type": "string"
+                    }
                 }
             ],
             "returns": []
@@ -440,6 +446,12 @@
                         "type": "string"
                     },
                     "termsID": {
+                        "type": "string"
+                    },
+                    "toMSP": {
+                        "type": "string"
+                    },
+                    "expiryISO": {
                         "type": "string"
                     },
                     "status": {

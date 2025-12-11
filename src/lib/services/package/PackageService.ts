@@ -764,12 +764,13 @@ export class PackageService {
         externalId: string,
         termsId: string,
         toMSP: string,
+        expiryISO: string,
     ): Promise<FireFlyContractInvokeResponse> => {
         const res = await this.ff.invokeContractAPI(
             contractInterface.name,
             "UpdateStatusAfterPropose",
             {
-                input: { externalId, termsID: termsId, toMSP },
+                input: { externalId, termsID: termsId, toMSP, expiryISO },
             },
             { confirm: true, publish: true },
         )

@@ -291,7 +291,7 @@ const main = async () => {
     const proposeRes = await org1PkgService.proposeTransfer(packageID, termsId, transferTerms);
     log.success(`Transfer proposed: ${proposeRes.id}`);
     // Update status after propose
-    const proposeStatusRes = await org1PkgService.updateStatusAfterPropose(packageID, termsId, "Org2MSP");
+    const proposeStatusRes = await org1PkgService.updateStatusAfterPropose(packageID, termsId, "Org2MSP", transferTerms.expiryISO);
     log.success(`Status updated after propose: ${proposeStatusRes.id}`);
     // Test 8: Check package status after propose
     log.section("Test 8: Check Status After Propose");

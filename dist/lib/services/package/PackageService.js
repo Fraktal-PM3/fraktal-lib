@@ -479,9 +479,9 @@ class PackageService {
          * @param toMSP MSP ID of the recipient organization.
          * @returns FireFly invocation response.
          */
-        this.updateStatusAfterPropose = async (externalId, termsId, toMSP) => {
+        this.updateStatusAfterPropose = async (externalId, termsId, toMSP, expiryISO) => {
             const res = await this.ff.invokeContractAPI(interface_json_1.default.name, "UpdateStatusAfterPropose", {
-                input: { externalId, termsID: termsId, toMSP },
+                input: { externalId, termsID: termsId, toMSP, expiryISO },
             }, { confirm: true, publish: true });
             return res;
         };

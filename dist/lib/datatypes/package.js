@@ -38,7 +38,8 @@ exports.PackageDetailsSchema2020 = {
             additionalProperties: false,
         },
         Size: {
-            type: "object", dISO: { type: "string" },
+            type: "object",
+            dISO: { type: "string" },
             expiryISO: { type: ["string", "null"] },
             properties: {
                 width: { type: "number" },
@@ -53,8 +54,8 @@ exports.PackageDetailsSchema2020 = {
             enum: ["high", "medium", "low", "none"],
         },
         Price: {
-            type: "number"
-        }
+            type: "number",
+        },
     },
 };
 const packageDetailsDatatypePayload = (namespace = "default") => ({
@@ -79,16 +80,9 @@ exports.TransferOfferSchema2020 = {
         fromMSP: { type: "string" },
         toMSP: { type: "string" },
         price: { type: "number" },
-        createdISO: { type: "string" },
-        expiryISO: { type: ["string", "null"] },
+        expiryISO: { type: "string" },
     },
-    required: [
-        "externalPackageId",
-        "fromMSP",
-        "toMSP",
-        "price",
-        "createdISO",
-    ],
+    required: ["externalPackageId", "fromMSP", "toMSP", "price", "expiryISO"],
     additionalProperties: false,
 };
 const transferOfferDatatypePayload = (namespace = "default") => ({

@@ -308,7 +308,7 @@ export declare class PackageService {
      * @param toMSP MSP ID of the recipient organization.
      * @returns FireFly invocation response.
      */
-    updateStatusAfterPropose: (externalId: string, termsId: string, toMSP: string) => Promise<FireFlyContractInvokeResponse>;
+    updateStatusAfterPropose: (externalId: string, termsId: string, toMSP: string, expiryISO: string) => Promise<FireFlyContractInvokeResponse>;
     /**
      * Updates the package status to READY_FOR_PICKUP after accepting a transfer.
      * This should be called after AcceptTransfer completes successfully.

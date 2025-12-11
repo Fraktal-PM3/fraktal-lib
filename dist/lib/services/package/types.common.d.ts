@@ -266,6 +266,10 @@ export type StatusUpdatedAfterProposeEvent = {
     externalId: string;
     /** Identifier for this transfer proposal. */
     termsID: string;
+    /** MSP that is the target recipient of the proposed transfer. */
+    toMSP: string;
+    /** ISO-8601 expiry timestamp for the proposed transfer. */
+    expiryISO: string;
     /** New status of the package (typically "proposed" or "in_transit"). */
     status: Status;
     /** Identity of the caller who proposed the transfer. */
@@ -326,10 +330,8 @@ export type TransferOfferData = {
     toMSP: string;
     /** Price for the transfer. */
     price: number;
-    /** ISO-8601 creation timestamp. */
-    createdISO: string;
-    /** Optional ISO-8601 expiry timestamp. */
-    expiryISO: string | null | undefined;
+    /** ISO-8601 expiry timestamp. */
+    expiryISO: string;
 };
 /**
  * Type guard to check if a message is a TransferOffer datatype message.

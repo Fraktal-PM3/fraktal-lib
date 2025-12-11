@@ -6,15 +6,18 @@ import {
     Status,
     Urgency,
     isPackageDetailsMessage,
-    isTransferOfferMessage
+    isTransferOfferMessage,
 } from "./lib/services/package/types.common"
 import RoleService from "./lib/services/role/RoleService"
 
 // Exports for docs
 export {
     PACKAGE_DETAILS_DT_NAME,
-    PACKAGE_DETAILS_DT_VERSION, TRANSFER_OFFER_DT_NAME,
-    TRANSFER_OFFER_DT_VERSION, packageDetailsDatatypePayload, transferOfferDatatypePayload
+    PACKAGE_DETAILS_DT_VERSION,
+    TRANSFER_OFFER_DT_NAME,
+    TRANSFER_OFFER_DT_VERSION,
+    packageDetailsDatatypePayload,
+    transferOfferDatatypePayload,
 } from "./lib/datatypes/package"
 export { PackageService } from "./lib/services/package/PackageService"
 export * from "./lib/services/package/types.common"
@@ -309,12 +312,14 @@ const main = async () => {
         packageID,
         termsId,
         "Org2MSP",
+        transferTerms.expiryISO,
     )
     log.success(`Status updated after propose: ${proposeStatusRes.id}`)
 
     // Test 8: Check package status after propose
     log.section("Test 8: Check Status After Propose")
-    const pkgAfterPropose = await org1PkgService.readBlockchainPackage(packageID)
+    const pkgAfterPropose =
+        await org1PkgService.readBlockchainPackage(packageID)
     log.data("Package after propose", {
         externalId: pkgAfterPropose.externalId,
         status: pkgAfterPropose.status,
@@ -545,7 +550,6 @@ const main = async () => {
     )
 }
 
-
 // Only run main when this file is executed directly (not imported)
 if (require.main === module) {
     main().catch((err) => {
@@ -556,3 +560,4 @@ if (require.main === module) {
 }
 
 // test()
+

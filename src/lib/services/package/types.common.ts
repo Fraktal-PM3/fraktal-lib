@@ -94,13 +94,10 @@ export type TransferTerms = {
     fromMSP: string
     /** MSP/organization targeted to receive the package. */
     toMSP: string
-    /** ISO-8601 creation timestamp of the proposal. */
-    createdISO: string
     /**
-     * Optional ISO-8601 expiry timestamp.
-     * If `null`/`undefined`, the proposal does not expire automatically.
+     * ISO-8601 expiry timestamp.
      */
-    expiryISO?: string | null
+    expiryISO: string
     /** Price to transfer ownership (currency/context external). */
     price: number
 }

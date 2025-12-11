@@ -24,6 +24,7 @@ import {
     PackageDetailsWithId,
     PackageEventHandler,
     PackagePII,
+    Proposal,
     Status,
     StatusUpdatedEvent,
     StatusUpdatedAfterProposeEvent,
@@ -883,5 +884,97 @@ export class PackageService {
             { confirm: true, publish: true },
         )
         return res
+    }
+
+    /**
+     * Reads private transfer terms from the caller's implicit collection.
+     * Supports partial queries by providing empty strings for either parameter.
+     *
+     * @param externalId Package external ID (can be empty string for partial query by termsID only).
+     * @param termsID Transfer proposal identifier (can be empty string for partial query by externalId only).
+     * @returns Array of TransferTerms if partial query (one param empty), single TransferTerms if both params provided.
+     *
+     * @example
+     * ```ts
+     * // Get all terms for a package
+     * const termsArray = await svc.readPrivateTransferTerms("uuid-123", "")
+     *
+     * // Get specific terms
+     * const terms = await svc.readPrivateTransferTerms("uuid-123", "uuid-456")
+     * ```
+     */
+    public readPrivateTransferTerms = async (
+        externalId: string,
+        termsID: string,
+    ): Promise<TransferTerms | TransferTerms[]> => {
+        const res = await this.ff.queryContractAPI(
+            contractInterface.name,
+            "ReadPrivateTransferTerms",
+            {
+                input: { externalId, termsID },
+            },
+            { confirm: true, publish: true },
+        )
+
+        // Parse the response - chaincode returns JSON string
+        if (typeof res === "string") {
+            const parsed = JSON.parse(res)
+            // If partial query (one param empty), we get an array of JSON strings
+            if (Array.isArray(parsed)) {
+                return parsed.map((item) =>
+                    typeof item === "string" ? JSON.parse(item) : item,
+                )
+            }
+            // Otherwise we get a single object
+            return parsed
+        }
+
+        return res as TransferTerms
+    }
+
+    /**
+     * Reads public proposal data from the blockchain.
+     * Supports partial queries by providing empty strings for either parameter.
+     *
+     * @param externalId Package external ID (can be empty string for partial query by termsID only).
+     * @param termsID Transfer proposal identifier (can be empty string for partial query by externalId only).
+     * @returns Array of Proposal if partial query (one param empty), single Proposal if both params provided.
+     *
+     * @example
+     * ```ts
+     * // Get all proposals for a package
+     * const proposalsArray = await svc.readPublicProposal("uuid-123", "")
+     *
+     * // Get specific proposal
+     * const proposal = await svc.readPublicProposal("uuid-123", "uuid-456")
+     * ```
+     */
+    public readPublicProposal = async (
+        externalId: string,
+        termsID: string,
+    ): Promise<Proposal | Proposal[]> => {
+        const res = await this.ff.queryContractAPI(
+            contractInterface.name,
+            "ReadPublicProposal",
+            {
+                input: { externalId, termsID },
+            },
+            { confirm: true, publish: true },
+        )
+
+        // Parse the response - chaincode returns JSON string
+        if (typeof res === "string") {
+            const parsed = JSON.parse(res)
+            // If partial query (one param empty), we get an array of JSON strings
+            if (Array.isArray(parsed)) {
+                return parsed.map((item) =>
+                    typeof item === "string" ? JSON.parse(item) : item,
+                )
+            }
+            // Otherwise we get a single object
+            return parsed
+        }
+
+        return res as Proposal
     }
 }

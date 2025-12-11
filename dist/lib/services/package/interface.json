@@ -67,6 +67,60 @@
             ]
         },
         {
+            "name": "ReadPrivateTransferTerms",
+            "pathname": "",
+            "description": "Read private transfer terms from the caller's implicit collection. Supports partial queries - provide empty string for either parameter to query by the other.",
+            "params": [
+                {
+                    "name": "externalId",
+                    "schema": {
+                        "type": "string"
+                    }
+                },
+                {
+                    "name": "termsID",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "returns": [
+                {
+                    "name": "",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "ReadPublicProposal",
+            "pathname": "",
+            "description": "Read public proposal data from the blockchain. Supports partial queries - provide empty string for either parameter to query by the other.",
+            "params": [
+                {
+                    "name": "externalId",
+                    "schema": {
+                        "type": "string"
+                    }
+                },
+                {
+                    "name": "termsID",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "returns": [
+                {
+                    "name": "",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ]
+        },
+        {
             "name": "UpdatePackageStatus",
             "pathname": "",
             "description": "Update status (only owner org may update; setting to 'succeeded' additionally requires attribute role=pm3).",

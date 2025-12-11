@@ -1,5 +1,5 @@
 import FireFly, { FireFlyContractInvokeResponse, FireFlyContractQueryResponse, FireFlyDataResponse, FireFlyDatatypeResponse } from "@hyperledger/firefly-sdk";
-import { BlockchainPackage, CreatePackageEvent, DeletePackageEvent, PackageDetails, PackageDetailsWithId, PackagePII, Status, StatusUpdatedEvent, StatusUpdatedAfterProposeEvent, StatusUpdatedAfterAcceptEvent, StoreObject, TransferExecutedEvent, TransferToPM3Event, TransferTerms, FireFlyDatatypeMessage, BlockchainEventDelivery } from "./types.common";
+import { BlockchainPackage, CreatePackageEvent, DeletePackageEvent, PackageDetails, PackageDetailsWithId, PackagePII, Proposal, Status, StatusUpdatedEvent, StatusUpdatedAfterProposeEvent, StatusUpdatedAfterAcceptEvent, StoreObject, TransferExecutedEvent, TransferToPM3Event, TransferTerms, FireFlyDatatypeMessage, BlockchainEventDelivery } from "./types.common";
 /**
  * High-level API for interacting with blockchain-based package management via Hyperledger FireFly.
  *
@@ -349,4 +349,40 @@ export declare class PackageService {
      * @returns FireFly invocation response.
      */
     transferToPM3: (externalId: string) => Promise<FireFlyContractInvokeResponse>;
+    /**
+     * Reads private transfer terms from the caller's implicit collection.
+     * Supports partial queries by providing empty strings for either parameter.
+     *
+     * @param externalId Package external ID (can be empty string for partial query by termsID only).
+     * @param termsID Transfer proposal identifier (can be empty string for partial query by externalId only).
+     * @returns Array of TransferTerms if partial query (one param empty), single TransferTerms if both params provided.
+     *
+     * @example
+     * ```ts
+     * // Get all terms for a package
+     * const termsArray = await svc.readPrivateTransferTerms("uuid-123", "")
+     *
+     * // Get specific terms
+     * const terms = await svc.readPrivateTransferTerms("uuid-123", "uuid-456")
+     * ```
+     */
+    readPrivateTransferTerms: (externalId: string, termsID: string) => Promise<TransferTerms | TransferTerms[]>;
+    /**
+     * Reads public proposal data from the blockchain.
+     * Supports partial queries by providing empty strings for either parameter.
+     *
+     * @param externalId Package external ID (can be empty string for partial query by termsID only).
+     * @param termsID Transfer proposal identifier (can be empty string for partial query by externalId only).
+     * @returns Array of Proposal if partial query (one param empty), single Proposal if both params provided.
+     *
+     * @example
+     * ```ts
+     * // Get all proposals for a package
+     * const proposalsArray = await svc.readPublicProposal("uuid-123", "")
+     *
+     * // Get specific proposal
+     * const proposal = await svc.readPublicProposal("uuid-123", "uuid-456")
+     * ```
+     */
+    readPublicProposal: (externalId: string, termsID: string) => Promise<Proposal | Proposal[]>;
 }

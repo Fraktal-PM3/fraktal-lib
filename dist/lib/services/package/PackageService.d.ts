@@ -94,7 +94,8 @@ export declare class PackageService {
      *
      * // Type-safe listener for StatusUpdatedAfterPropose event
      * await svc.onEvent("StatusUpdatedAfterPropose", (e) => {
-     *   console.log(e.output.externalId, e.output.termsID, e.output.status)
+     *   console.log(e.output.externalId, e.output.termsId, e.output.status)
+
      * })
      * ```
      */
@@ -354,8 +355,10 @@ export declare class PackageService {
      * Reads private transfer terms from the caller's implicit collection.
      * Supports partial queries by providing empty strings for either parameter.
      *
-     * @param externalId Package external ID (can be empty string for partial query by termsID only).
-     * @param termsID Transfer proposal identifier (can be empty string for partial query by externalId only).
+     * @param externalId Package external ID (can be empty string for partial query by termsId only).
+
+     * @param termsId Transfer proposal identifier (can be empty string for partial query by externalId only).
+
      * @returns Array of TransferTerms if partial query (one param empty), single TransferTerms if both params provided.
      *
      * @example
@@ -367,13 +370,15 @@ export declare class PackageService {
      * const terms = await svc.readPrivateTransferTerms("uuid-123", "uuid-456")
      * ```
      */
-    readPrivateTransferTerms: (externalId: string, termsID: string) => Promise<TransferTerms | TransferTerms[]>;
+    readPrivateTransferTerms: (externalId: string, termsId: string) => Promise<TransferTerms | TransferTerms[]>;
     /**
      * Reads public proposal data from the blockchain.
      * Supports partial queries by providing empty strings for either parameter.
      *
-     * @param externalId Package external ID (can be empty string for partial query by termsID only).
-     * @param termsID Transfer proposal identifier (can be empty string for partial query by externalId only).
+     * @param externalId Package external ID (can be empty string for partial query by termsId only).
+
+     * @param termsId Transfer proposal identifier (can be empty string for partial query by externalId only).
+
      * @returns Array of Proposal if partial query (one param empty), single Proposal if both params provided.
      *
      * @example
@@ -385,5 +390,5 @@ export declare class PackageService {
      * const proposal = await svc.readPublicProposal("uuid-123", "uuid-456")
      * ```
      */
-    readPublicProposal: (externalId: string, termsID: string) => Promise<Proposal | Proposal[]>;
+    readPublicProposal: (externalId: string, termsId: string) => Promise<Proposal | Proposal[]>;
 }

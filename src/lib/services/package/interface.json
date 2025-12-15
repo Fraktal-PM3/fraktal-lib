@@ -78,7 +78,7 @@
                     }
                 },
                 {
-                    "name": "termsID",
+                    "name": "termsId",
                     "schema": {
                         "type": "string"
                     }
@@ -105,7 +105,7 @@
                     }
                 },
                 {
-                    "name": "termsID",
+                    "name": "termsId",
                     "schema": {
                         "type": "string"
                     }
@@ -197,7 +197,7 @@
                     }
                 },
                 {
-                    "name": "termsID",
+                    "name": "termsId",
                     "schema": {
                         "type": "string"
                     }
@@ -217,7 +217,7 @@
                     }
                 },
                 {
-                    "name": "termsID",
+                    "name": "termsId",
                     "schema": {
                         "type": "string"
                     }
@@ -249,7 +249,7 @@
                     }
                 },
                 {
-                    "name": "termsID",
+                    "name": "termsId",
                     "schema": {
                         "type": "string"
                     }
@@ -296,7 +296,7 @@
                     }
                 },
                 {
-                    "name": "termsID",
+                    "name": "termsId",
                     "schema": {
                         "type": "string"
                     }
@@ -316,7 +316,7 @@
                     }
                 },
                 {
-                    "name": "termsID",
+                    "name": "termsId",
                     "schema": {
                         "type": "string"
                     }
@@ -445,7 +445,7 @@
                     "externalId": {
                         "type": "string"
                     },
-                    "termsID": {
+                    "termsId": {
                         "type": "string"
                     },
                     "toMSP": {
@@ -482,7 +482,7 @@
                     "externalId": {
                         "type": "string"
                     },
-                    "termsID": {
+                    "termsId": {
                         "type": "string"
                     },
                     "status": {

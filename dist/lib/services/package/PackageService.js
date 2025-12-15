@@ -459,7 +459,7 @@ class PackageService {
             const res = await this.ff.invokeContractAPI(interface_json_1.default.name, "ProposeTransfer", {
                 input: {
                     externalId,
-                    termsID: termsId,
+                    termsId: termsId,
                 },
                 options: {
                     transientMap: {
@@ -481,7 +481,7 @@ class PackageService {
          */
         this.updateStatusAfterPropose = async (externalId, termsId, toMSP, expiryISO) => {
             const res = await this.ff.invokeContractAPI(interface_json_1.default.name, "UpdateStatusAfterPropose", {
-                input: { externalId, termsID: termsId, toMSP, expiryISO },
+                input: { externalId, termsId: termsId, toMSP, expiryISO },
             }, { confirm: true, publish: true });
             return res;
         };
@@ -496,7 +496,7 @@ class PackageService {
          */
         this.updateStatusAfterAccept = async (externalId, termsId) => {
             const res = await this.ff.invokeContractAPI(interface_json_1.default.name, "UpdateStatusAfterAccept", {
-                input: { externalId, termsID: termsId },
+                input: { externalId, termsId: termsId },
             }, { confirm: true, publish: true });
             return res;
         };
@@ -512,7 +512,7 @@ class PackageService {
          */
         this.acceptTransfer = async (externalId, termsId, transferTerms) => {
             const res = await this.ff.invokeContractAPI(interface_json_1.default.name, "AcceptTransfer", {
-                input: { externalId, termsID: termsId },
+                input: { externalId, termsId: termsId },
                 options: {
                     transientMap: {
                         transferTerms: JSON.stringify(transferTerms),
@@ -535,7 +535,7 @@ class PackageService {
          */
         this.executeTransfer = async (externalId, termsId, storeObject, transferTerms) => {
             const res = await this.ff.invokeContractAPI(interface_json_1.default.name, "ExecuteTransfer", {
-                input: { externalId, termsID: termsId },
+                input: { externalId, termsId: termsId },
                 options: {
                     transientMap: {
                         storeObject: JSON.stringify(storeObject),
@@ -561,8 +561,10 @@ class PackageService {
          * Reads private transfer terms from the caller's implicit collection.
          * Supports partial queries by providing empty strings for either parameter.
          *
-         * @param externalId Package external ID (can be empty string for partial query by termsID only).
-         * @param termsID Transfer proposal identifier (can be empty string for partial query by externalId only).
+         * @param externalId Package external ID (can be empty string for partial query by termsId only).
+    
+         * @param termsId Transfer proposal identifier (can be empty string for partial query by externalId only).
+    
          * @returns Array of TransferTerms if partial query (one param empty), single TransferTerms if both params provided.
          *
          * @example
@@ -574,9 +576,9 @@ class PackageService {
          * const terms = await svc.readPrivateTransferTerms("uuid-123", "uuid-456")
          * ```
          */
-        this.readPrivateTransferTerms = async (externalId, termsID) => {
+        this.readPrivateTransferTerms = async (externalId, termsId) => {
             const res = await this.ff.queryContractAPI(interface_json_1.default.name, "ReadPrivateTransferTerms", {
-                input: { externalId, termsID },
+                input: { externalId, termsId },
             }, { confirm: true, publish: true });
             // Parse the response - chaincode returns JSON string
             if (typeof res === "string") {
@@ -594,8 +596,10 @@ class PackageService {
          * Reads public proposal data from the blockchain.
          * Supports partial queries by providing empty strings for either parameter.
          *
-         * @param externalId Package external ID (can be empty string for partial query by termsID only).
-         * @param termsID Transfer proposal identifier (can be empty string for partial query by externalId only).
+         * @param externalId Package external ID (can be empty string for partial query by termsId only).
+    
+         * @param termsId Transfer proposal identifier (can be empty string for partial query by externalId only).
+    
          * @returns Array of Proposal if partial query (one param empty), single Proposal if both params provided.
          *
          * @example
@@ -607,9 +611,9 @@ class PackageService {
          * const proposal = await svc.readPublicProposal("uuid-123", "uuid-456")
          * ```
          */
-        this.readPublicProposal = async (externalId, termsID) => {
+        this.readPublicProposal = async (externalId, termsId) => {
             const res = await this.ff.queryContractAPI(interface_json_1.default.name, "ReadPublicProposal", {
-                input: { externalId, termsID },
+                input: { externalId, termsId },
             }, { confirm: true, publish: true });
             // Parse the response - chaincode returns JSON string
             if (typeof res === "string") {

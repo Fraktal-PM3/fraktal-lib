@@ -95,7 +95,6 @@ export declare class PackageService {
      * // Type-safe listener for StatusUpdatedAfterPropose event
      * await svc.onEvent("StatusUpdatedAfterPropose", (e) => {
      *   console.log(e.output.externalId, e.output.termsId, e.output.status)
-
      * })
      * ```
      */
@@ -356,9 +355,7 @@ export declare class PackageService {
      * Supports partial queries by providing empty strings for either parameter.
      *
      * @param externalId Package external ID (can be empty string for partial query by termsId only).
-
      * @param termsId Transfer proposal identifier (can be empty string for partial query by externalId only).
-
      * @returns Array of TransferTerms if partial query (one param empty), single TransferTerms if both params provided.
      *
      * @example
@@ -376,9 +373,7 @@ export declare class PackageService {
      * Supports partial queries by providing empty strings for either parameter.
      *
      * @param externalId Package external ID (can be empty string for partial query by termsId only).
-
      * @param termsId Transfer proposal identifier (can be empty string for partial query by externalId only).
-
      * @returns Array of Proposal if partial query (one param empty), single Proposal if both params provided.
      *
      * @example

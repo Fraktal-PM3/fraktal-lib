@@ -199,8 +199,8 @@ export class PackageService {
                 handlers.forEach((handler) => {
                     handler({
                         output: blockchainEvent.output,
-                        timestamp: blockchainEvent.timestamp,
-                        txid: blockchainEvent.tx.blockchainId,
+                        timestamp: blockchainEvent.info.timestamp,
+                        txid: blockchainEvent.info.transactionId,
                         header: {
                             key: "",
                             author: "",
@@ -262,7 +262,7 @@ export class PackageService {
      *
      * // Type-safe listener for StatusUpdatedAfterPropose event
      * await svc.onEvent("StatusUpdatedAfterPropose", (e) => {
-     *   console.log(e.output.externalId, e.output.termsId, e.output.status)
+     *   console.log(e.output.externalId, e.output.termsId, e.output.status)
      * })
      * ```
      */
@@ -736,7 +736,7 @@ export class PackageService {
             {
                 input: {
                     externalId,
-                    termsId: termsId,
+                    termsId: termsId,
                 },
                 options: {
                     transientMap: {
@@ -770,7 +770,7 @@ export class PackageService {
             contractInterface.name,
             "UpdateStatusAfterPropose",
             {
-                input: { externalId, termsId: termsId, toMSP, expiryISO },
+                input: { externalId, termsId: termsId, toMSP, expiryISO },
             },
             { confirm: true, publish: true },
         )
@@ -795,7 +795,7 @@ export class PackageService {
             contractInterface.name,
             "UpdateStatusAfterAccept",
             {
-                input: { externalId, termsId: termsId },
+                input: { externalId, termsId: termsId },
             },
             { confirm: true, publish: true },
         )
@@ -822,7 +822,7 @@ export class PackageService {
             contractInterface.name,
             "AcceptTransfer",
             {
-                input: { externalId, termsId: termsId },
+                input: { externalId, termsId: termsId },
                 options: {
                     transientMap: {
                         transferTerms: JSON.stringify(transferTerms),
@@ -857,7 +857,7 @@ export class PackageService {
             contractInterface.name,
             "ExecuteTransfer",
             {
-                input: { externalId, termsId: termsId },
+                input: { externalId, termsId: termsId },
                 options: {
                     transientMap: {
                         storeObject: JSON.stringify(storeObject),
@@ -894,8 +894,8 @@ export class PackageService {
      * Reads private transfer terms from the caller's implicit collection.
      * Supports partial queries by providing empty strings for either parameter.
      *
-     * @param externalId Package external ID (can be empty string for partial query by termsId only).
-     * @param termsId Transfer proposal identifier (can be empty string for partial query by externalId only).
+     * @param externalId Package external ID (can be empty string for partial query by termsId only).
+     * @param termsId Transfer proposal identifier (can be empty string for partial query by externalId only).
      * @returns Array of TransferTerms if partial query (one param empty), single TransferTerms if both params provided.
      *
      * @example
@@ -909,13 +909,13 @@ export class PackageService {
      */
     public readPrivateTransferTerms = async (
         externalId: string,
-        termsId: string,
+        termsId: string,
     ): Promise<TransferTerms | TransferTerms[]> => {
         const res = await this.ff.queryContractAPI(
             contractInterface.name,
             "ReadPrivateTransferTerms",
             {
-                input: { externalId, termsId },
+                input: { externalId, termsId },
             },
             { confirm: true, publish: true },
         )
@@ -940,8 +940,8 @@ export class PackageService {
      * Reads public proposal data from the blockchain.
      * Supports partial queries by providing empty strings for either parameter.
      *
-     * @param externalId Package external ID (can be empty string for partial query by termsId only).
-     * @param termsId Transfer proposal identifier (can be empty string for partial query by externalId only).
+     * @param externalId Package external ID (can be empty string for partial query by termsId only).
+     * @param termsId Transfer proposal identifier (can be empty string for partial query by externalId only).
      * @returns Array of Proposal if partial query (one param empty), single Proposal if both params provided.
      *
      * @example
@@ -955,13 +955,13 @@ export class PackageService {
      */
     public readPublicProposal = async (
         externalId: string,
-        termsId: string,
+        termsId: string,
     ): Promise<Proposal | Proposal[]> => {
         const res = await this.ff.queryContractAPI(
             contractInterface.name,
             "ReadPublicProposal",
             {
-                input: { externalId, termsId },
+                input: { externalId, termsId },
             },
             { confirm: true, publish: true },
         )

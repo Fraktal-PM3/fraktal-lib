@@ -7,7 +7,7 @@
         {
             "name": "CreatePackage",
             "pathname": "",
-            "description": "Create a package. Transient keys: 'pii' (JSON of PackagePII), 'packageDetails' (JSON of PackageDetails).",
+            "description": "Create a package. Transient keys: 'pii' (JSON of PackagePII), 'packageDetails' (JSON of PackageDetails), 'salt' (string).",
             "params": [
                 {
                     "name": "externalId",
@@ -78,7 +78,7 @@
                     }
                 },
                 {
-                    "name": "termsId",
+                    "name": "termsId",
                     "schema": {
                         "type": "string"
                     }
@@ -105,7 +105,7 @@
                     }
                 },
                 {
-                    "name": "termsId",
+                    "name": "termsId",
                     "schema": {
                         "type": "string"
                     }
@@ -197,7 +197,7 @@
                     }
                 },
                 {
-                    "name": "termsId",
+                    "name": "termsId",
                     "schema": {
                         "type": "string"
                     }
@@ -217,7 +217,7 @@
                     }
                 },
                 {
-                    "name": "termsId",
+                    "name": "termsId",
                     "schema": {
                         "type": "string"
                     }
@@ -249,7 +249,7 @@
                     }
                 },
                 {
-                    "name": "termsId",
+                    "name": "termsId",
                     "schema": {
                         "type": "string"
                     }
@@ -296,7 +296,7 @@
                     }
                 },
                 {
-                    "name": "termsId",
+                    "name": "termsId",
                     "schema": {
                         "type": "string"
                     }
@@ -307,7 +307,7 @@
         {
             "name": "ExecuteTransfer",
             "pathname": "",
-            "description": "Execute the transfer of ownership for a package. Only the current owner org may execute after acceptance by the recipient org. Requires 'storeObject' in transient.",
+            "description": "Execute the transfer of ownership for a package. Only the current owner org may execute after acceptance by the recipient org. Transient keys: 'transferTerms' (JSON), 'storeObject' (JSON).",
             "params": [
                 {
                     "name": "externalId",
@@ -316,7 +316,7 @@
                     }
                 },
                 {
-                    "name": "termsId",
+                    "name": "termsId",
                     "schema": {
                         "type": "string"
                     }
@@ -414,21 +414,26 @@
             "details": {
                 "type": "object",
                 "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "caller": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        {
+            "name": "ProposeTransfer",
+            "description": "Emitted when a transfer is proposed",
+            "details": {
+                "type": "object",
+                "properties": {
                     "externalId": {
                         "type": "string"
                     },
-                    "status": {
-                        "type": "string",
-                        "enum": [
-                            "pending",
-                            "ready_for_pickup",
-                            "picked_up",
-                            "in_transit",
-                            "delivered",
-                            "succeeded",
-                            "failed",
-                            "proposed"
-                        ]
+                    "termsId": {
+                        "type": "string"
                     },
                     "caller": {
                         "type": "string"
@@ -445,7 +450,7 @@
                     "externalId": {
                         "type": "string"
                     },
-                    "termsId": {
+                    "termsId": {
                         "type": "string"
                     },
                     "toMSP": {
@@ -474,6 +479,24 @@
             }
         },
         {
+            "name": "AcceptTransfer",
+            "description": "Emitted when a transfer is accepted",
+            "details": {
+                "type": "object",
+                "properties": {
+                    "externalId": {
+                        "type": "string"
+                    },
+                    "termsId": {
+                        "type": "string"
+                    },
+                    "caller": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        {
             "name": "StatusUpdatedAfterAccept",
             "description": "Emitted when package status is updated to READY_FOR_PICKUP after accepting a transfer",
             "details": {
@@ -482,7 +505,7 @@
                     "externalId": {
                         "type": "string"
                     },
-                    "termsId": {
+                    "termsId": {
                         "type": "string"
                     },
                     "status": {

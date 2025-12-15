@@ -9,6 +9,7 @@ import {
     isTransferOfferMessage,
 } from "./lib/services/package/types.common"
 import RoleService from "./lib/services/role/RoleService"
+import { tr } from "zod/v4/locales"
 
 // Exports for docs
 export {
@@ -354,6 +355,7 @@ const main = async () => {
         packageID,
         termsId,
         { salt, pii, packageDetails },
+        transferTerms,
     )
     log.success(`Transfer executed: ${executeRes.id}`)
 
@@ -560,4 +562,3 @@ if (require.main === module) {
 }
 
 // test()
-

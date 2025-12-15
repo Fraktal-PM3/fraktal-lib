@@ -339,9 +339,10 @@ export declare class PackageService {
      * @param termsId Transfer terms ID (must be a UUID).
      * @param storeObject The same data passed in CreatePackage, including salt, PII, and packageDetails.
      *                    Used for integrity verification and transfer of data to the new owner.
+     * @param transferTerms Complete transfer terms including all fields.
      * @returns FireFly invocation response.
      */
-    executeTransfer: (externalId: string, termsId: string, storeObject: StoreObject) => Promise<FireFlyContractInvokeResponse>;
+    executeTransfer: (externalId: string, termsId: string, storeObject: StoreObject, transferTerms: TransferTerms) => Promise<FireFlyContractInvokeResponse>;
     /**
      * Transfers a package to PM3 (used for archiving or external transfers). The reciepient is always PM3. Additionally the package status must
      * be "Delivered" to be eligible for transfer to PM3 and the reciepint org must be the owner (and the one executing the transfer).

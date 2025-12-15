@@ -530,14 +530,16 @@ class PackageService {
          * @param termsId Transfer terms ID (must be a UUID).
          * @param storeObject The same data passed in CreatePackage, including salt, PII, and packageDetails.
          *                    Used for integrity verification and transfer of data to the new owner.
+         * @param transferTerms Complete transfer terms including all fields.
          * @returns FireFly invocation response.
          */
-        this.executeTransfer = async (externalId, termsId, storeObject) => {
+        this.executeTransfer = async (externalId, termsId, storeObject, transferTerms) => {
             const res = await this.ff.invokeContractAPI(interface_json_1.default.name, "ExecuteTransfer", {
                 input: { externalId, termsID: termsId },
                 options: {
                     transientMap: {
                         storeObject: JSON.stringify(storeObject),
+                        transferTerms: JSON.stringify(transferTerms),
                     },
                 },
             }, { confirm: true, publish: true });

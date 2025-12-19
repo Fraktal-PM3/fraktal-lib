@@ -272,10 +272,34 @@ export type StatusUpdatedEvent = {
  */
 export type DeletePackageEvent = {
     /** External identifier of the deleted package. */
-    externalId: string
-    /** Status of the package at deletion. */
-    status: Status
+    id: string
     /** Identity of the caller who deleted the package. */
+    caller: string
+}
+
+/**
+ * Event emitted when a transfer is proposed.
+ */
+export type ProposeTransferEvent = {
+    /** External identifier of the package. */
+    externalId: string
+    /** Identifier for this transfer proposal. */
+    termsId: string
+    /** MSP that is the target recipient of the proposed transfer. */
+    toMSP: string
+    /** Identity of the caller who proposed the transfer. */
+    caller: string
+}
+
+/**
+ * Event emitted when a transfer is accepted.
+ */
+export type AcceptTransferEvent = {
+    /** External identifier of the package. */
+    externalId: string
+    /** Identifier for the accepted transfer proposal. */
+    termsId: string
+    /** Identity of the caller who accepted the transfer. */
     caller: string
 }
 

@@ -533,13 +533,12 @@ class PackageService {
          * @param transferTerms Complete transfer terms including all fields.
          * @returns FireFly invocation response.
          */
-        this.executeTransfer = async (externalId, termsId, storeObject, transferTerms) => {
+        this.executeTransfer = async (externalId, termsId, toMSP, storeObject) => {
             const res = await this.ff.invokeContractAPI(interface_json_1.default.name, "ExecuteTransfer", {
-                input: { externalId, termsId: termsId },
+                input: { externalId, termsId: termsId, toMSP },
                 options: {
                     transientMap: {
                         storeObject: JSON.stringify(storeObject),
-                        transferTerms: JSON.stringify(transferTerms),
                     },
                 },
             }, { confirm: true, publish: true });

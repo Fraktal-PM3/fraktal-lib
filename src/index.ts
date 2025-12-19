@@ -354,8 +354,8 @@ const main = async () => {
     const executeRes = await org1PkgService.executeTransfer(
         packageID,
         termsId,
+        transferTerms.toMSP,
         { salt, pii, packageDetails },
-        transferTerms,
     )
     log.success(`Transfer executed: ${executeRes.id}`)
 

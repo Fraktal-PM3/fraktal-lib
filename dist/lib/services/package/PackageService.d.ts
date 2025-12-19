@@ -1,5 +1,5 @@
 import FireFly, { FireFlyContractInvokeResponse, FireFlyContractQueryResponse, FireFlyDataResponse, FireFlyDatatypeResponse } from "@hyperledger/firefly-sdk";
-import { BlockchainPackage, CreatePackageEvent, DeletePackageEvent, PackageDetails, PackageDetailsWithId, PackagePII, Proposal, Status, StatusUpdatedEvent, StatusUpdatedAfterProposeEvent, StatusUpdatedAfterAcceptEvent, StoreObject, TransferExecutedEvent, TransferToPM3Event, TransferTerms, FireFlyDatatypeMessage, BlockchainEventDelivery } from "./types.common";
+import { BlockchainPackage, CreatePackageEvent, DeletePackageEvent, PackageDetails, PackageDetailsWithId, PackagePII, Proposal, Status, StatusUpdatedEvent, ProposeTransferEvent, AcceptTransferEvent, StatusUpdatedAfterProposeEvent, StatusUpdatedAfterAcceptEvent, StoreObject, TransferExecutedEvent, TransferToPM3Event, TransferTerms, FireFlyDatatypeMessage, BlockchainEventDelivery } from "./types.common";
 /**
  * High-level API for interacting with blockchain-based package management via Hyperledger FireFly.
  *
@@ -106,6 +106,12 @@ export declare class PackageService {
     }) => void): Promise<void>;
     onEvent(eventName: "DeletePackage", handler: (event: BlockchainEventDelivery & {
         output: DeletePackageEvent;
+    }) => void): Promise<void>;
+    onEvent(eventName: "ProposeTransfer", handler: (event: BlockchainEventDelivery & {
+        output: ProposeTransferEvent;
+    }) => void): Promise<void>;
+    onEvent(eventName: "AcceptTransfer", handler: (event: BlockchainEventDelivery & {
+        output: AcceptTransferEvent;
     }) => void): Promise<void>;
     onEvent(eventName: "StatusUpdatedAfterPropose", handler: (event: BlockchainEventDelivery & {
         output: StatusUpdatedAfterProposeEvent;
@@ -342,7 +348,7 @@ export declare class PackageService {
      * @param transferTerms Complete transfer terms including all fields.
      * @returns FireFly invocation response.
      */
-    executeTransfer: (externalId: string, termsId: string, storeObject: StoreObject, transferTerms: TransferTerms) => Promise<FireFlyContractInvokeResponse>;
+    executeTransfer: (externalId: string, termsId: string, toMSP: string, storeObject: StoreObject) => Promise<FireFlyContractInvokeResponse>;
     /**
      * Transfers a package to PM3 (used for archiving or external transfers). The reciepient is always PM3. Additionally the package status must
      * be "Delivered" to be eligible for transfer to PM3 and the reciepint org must be the owner (and the one executing the transfer).

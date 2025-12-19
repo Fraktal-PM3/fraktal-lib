@@ -320,6 +320,12 @@
                     "schema": {
                         "type": "string"
                     }
+                },
+                {
+                    "name": "toMSP",
+                    "schema": {
+                        "type": "string"
+                    }
                 }
             ],
             "returns": []
@@ -433,6 +439,9 @@
                         "type": "string"
                     },
                     "termsId": {
+                        "type": "string"
+                    },
+                    "toMSP": {
                         "type": "string"
                     },
                     "caller": {

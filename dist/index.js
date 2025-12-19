@@ -313,7 +313,7 @@ const main = async () => {
     // Test 10: Execute transfer (from Org1)
     log.section("Test 10: Execute Transfer (Org1)");
     log.info(`Org1 executing transfer...`);
-    const executeRes = await org1PkgService.executeTransfer(packageID, termsId, { salt, pii, packageDetails }, transferTerms);
+    const executeRes = await org1PkgService.executeTransfer(packageID, termsId, transferTerms.toMSP, { salt, pii, packageDetails });
     log.success(`Transfer executed: ${executeRes.id}`);
     const pkgAfterExecute = await org1PkgService.readBlockchainPackage(packageID);
     log.data("Package after transfer execution", {

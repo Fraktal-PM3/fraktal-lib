@@ -27,6 +27,8 @@ import {
     Proposal,
     Status,
     StatusUpdatedEvent,
+    ProposeTransferEvent,
+    AcceptTransferEvent,
     StatusUpdatedAfterProposeEvent,
     StatusUpdatedAfterAcceptEvent,
     StoreObject,
@@ -45,6 +47,8 @@ type EventTypeMap = {
     CreatePackage: CreatePackageEvent
     StatusUpdated: StatusUpdatedEvent
     DeletePackage: DeletePackageEvent
+    ProposeTransfer: ProposeTransferEvent
+    AcceptTransfer: AcceptTransferEvent
     StatusUpdatedAfterPropose: StatusUpdatedAfterProposeEvent
     StatusUpdatedAfterAccept: StatusUpdatedAfterAcceptEvent
     TransferExecuted: TransferExecutedEvent
@@ -286,6 +290,20 @@ export class PackageService {
         eventName: "DeletePackage",
         handler: (
             event: BlockchainEventDelivery & { output: DeletePackageEvent },
+        ) => void,
+    ): Promise<void>
+
+    public onEvent(
+        eventName: "ProposeTransfer",
+        handler: (
+            event: BlockchainEventDelivery & { output: ProposeTransferEvent },
+        ) => void,
+    ): Promise<void>
+
+    public onEvent(
+        eventName: "AcceptTransfer",
+        handler: (
+            event: BlockchainEventDelivery & { output: AcceptTransferEvent },
         ) => void,
     ): Promise<void>
 
@@ -850,18 +868,17 @@ export class PackageService {
     public executeTransfer = async (
         externalId: string,
         termsId: string,
+        toMSP: string,
         storeObject: StoreObject,
-        transferTerms: TransferTerms,
     ): Promise<FireFlyContractInvokeResponse> => {
         const res = await this.ff.invokeContractAPI(
             contractInterface.name,
             "ExecuteTransfer",
             {
-                input: { externalId, termsId: termsId },
+                input: { externalId, termsId: termsId, toMSP },
                 options: {
                     transientMap: {
                         storeObject: JSON.stringify(storeObject),
-                        transferTerms: JSON.stringify(transferTerms),
                     },
                 },
             },

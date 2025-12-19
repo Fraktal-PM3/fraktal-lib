@@ -100,7 +100,7 @@ export type TransferTerms = {
     expiryISO: string
     /** Price to transfer ownership (currency/context external). */
     price: number
-    salt?: string
+    salt: string
 }
 
 /**
@@ -115,6 +115,7 @@ export type Proposal = {
     toMSP: string
     /** Current status of the proposal (e.g., "active", "accepted"). */
     status: string
+    termsHash: string
 }
 
 /**

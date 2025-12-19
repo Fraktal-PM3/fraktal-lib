@@ -96,7 +96,7 @@ export type TransferTerms = {
     expiryISO: string;
     /** Price to transfer ownership (currency/context external). */
     price: number;
-    salt?: string;
+    salt: string;
 };
 /**
  * Proposal instance stored on-chain for tracking transfer proposals.
@@ -110,6 +110,7 @@ export type Proposal = {
     toMSP: string;
     /** Current status of the proposal (e.g., "active", "accepted"). */
     status: string;
+    termsHash: string;
 };
 /**
  * Public package details that are safe to share on-chain.

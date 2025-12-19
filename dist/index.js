@@ -277,9 +277,9 @@ const main = async () => {
         externalPackageId: packageID,
         fromMSP: "Org1MSP",
         toMSP: "Org2MSP",
-        createdISO: new Date().toISOString(),
         expiryISO: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
         price: transferPrice,
+        salt: crypto_1.default.randomBytes(16).toString("hex"),
     };
     log.data("Transfer proposal", {
         termsId,

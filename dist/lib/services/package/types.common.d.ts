@@ -96,6 +96,7 @@ export type TransferTerms = {
     expiryISO: string;
     /** Price to transfer ownership (currency/context external). */
     price: number;
+    salt?: string;
 };
 /**
  * Proposal instance stored on-chain for tracking transfer proposals.

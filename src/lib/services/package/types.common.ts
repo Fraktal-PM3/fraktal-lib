@@ -100,6 +100,7 @@ export type TransferTerms = {
     expiryISO: string
     /** Price to transfer ownership (currency/context external). */
     price: number
+    salt?: string
 }
 
 /**
@@ -109,7 +110,7 @@ export type Proposal = {
     /** External identifier of the package. */
     externalId: string
     /** Unique identifier for this transfer proposal. */
-    termsId: string
+    termsId: string
     /** MSP/organization targeted to receive the package. */
     toMSP: string
     /** Current status of the proposal (e.g., "active", "accepted"). */
@@ -310,7 +311,7 @@ export type StatusUpdatedAfterProposeEvent = {
     /** External identifier of the package. */
     externalId: string
     /** Identifier for this transfer proposal. */
-    termsId: string
+    termsId: string
     /** MSP that is the target recipient of the proposed transfer. */
     toMSP: string
     /** ISO-8601 expiry timestamp for the proposed transfer. */
@@ -328,7 +329,7 @@ export type StatusUpdatedAfterAcceptEvent = {
     /** External identifier of the package. */
     externalId: string
     /** Identifier for the accepted transfer proposal. */
-    termsId: string
+    termsId: string
     /** New status of the package (typically "ready_for_pickup"). */
     status: Status
     /** Identity of the caller who accepted the transfer. */

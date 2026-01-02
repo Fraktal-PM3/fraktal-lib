@@ -1,3 +1,38 @@
+/**
+ * Integration Tests for PackageService
+ *
+ * PREREQUISITES:
+ * These are integration tests that require a fully deployed Hyperledger Fabric network
+ * with FireFly and the necessary chaincodes. Before running these tests, ensure:
+ *
+ * 1. Fabric Network & FireFly:
+ *    - A running Hyperledger Fabric network (e.g., from the fraktal deployment repo)
+ *    - FireFly nodes running for both Org1 and Org2
+ *    - FireFly accessible at:
+ *      - Org1: http://localhost:8000 (or http://127.0.0.1:8000)
+ *      - Org2: http://localhost:8001 (or http://127.0.0.1:8001)
+ *
+ * 2. Required Chaincodes Deployed:
+ *    - pm3package chaincode  (deploycc package)
+ *    - roleAuth chaincode (deploycc roleauth)
+ *
+ * 3. Network Configuration:
+ *    - Channel name: 'pm3'
+ *    - Namespace: 'default'
+ *    - Organizations: Org1MSP, Org2MSP
+ *
+ * ENVIRONMENT VARIABLES (optional):
+ * - FF_HOST: FireFly host for Org1 (default: http://localhost:8000)
+ * - FF_HOST_ORG2: FireFly host for Org2 (default: http://localhost:8001)
+ * - FF_NAMESPACE: FireFly namespace (default: default)
+ * - FABRIC_CHANNEL: Fabric channel name (default: pm3)
+ *
+ * To run these tests:
+ * 1. Deploy the Fabric network and chaincodes using the fraktal deployment scripts
+ * 2. Ensure FireFly is running and accessible
+ * 3. Run: npx vitest run test/package.test.ts
+ */
+
 import { PackageService } from "../src/lib/services/package/PackageService"
 import {
     Urgency,
@@ -94,6 +129,7 @@ describe("PackageService tests", () => {
             async () => {
                 const response = await org1PkgService.createPackage(
                     testPackageId,
+                    "Org2MSP",
                     packageDetails,
                     pii,
                     testSalt,
@@ -117,6 +153,7 @@ describe("PackageService tests", () => {
 
                 await org1PkgService.createPackage(
                     invalidUpdateTestPackageId,
+                    "Org2MSP",
                     packageDetails,
                     pii,
                     invalidUpdateTestSalt,
@@ -138,17 +175,38 @@ describe("PackageService tests", () => {
             async () => {
                 const updateTestPackageId = randomUUID()
                 const updateTestSalt = randomBytes(32).toString("hex")
+                const termsId = randomUUID()
                 await org1PkgService.createPackage(
                     updateTestPackageId,
+                    "Org2MSP",
                     packageDetails,
                     pii,
                     updateTestSalt,
                     true,
                 )
 
-                const response = await org1PkgService.updatePackageStatus(
+                const transferTerms = {
+                    externalPackageId: updateTestPackageId,
+                    fromMSP: "Org1MSP",
+                    toMSP: "Org2MSP",
+                    expiryISO: new Date(
+                        Date.now() + 24 * 60 * 60 * 1000,
+                    ).toISOString(),
+                    price: 100,
+                    salt: updateTestSalt,
+                }
+
+                await org1PkgService.proposeTransfer(
                     updateTestPackageId,
-                    Status.PROPOSED,
+                    termsId,
+                    transferTerms,
+                )
+
+                const response = await org1PkgService.updateStatusAfterPropose(
+                    updateTestPackageId,
+                    termsId,
+                    "Org2MSP",
+                    transferTerms.expiryISO,
                 )
                 expect(response).toBeDefined()
                 expect(response.error).toBeUndefined()
@@ -175,6 +233,7 @@ describe("PackageService tests", () => {
 
                 await org1PkgService.createPackage(
                     readTestPackageId,
+                    "Org2MSP",
                     packageDetails,
                     pii,
                     readTestSalt,
@@ -205,6 +264,7 @@ describe("PackageService tests", () => {
 
                 await org1PkgService.createPackage(
                     privateTestPackageId,
+                    "Org2MSP",
                     packageDetails,
                     pii,
                     privateTestSalt,
@@ -233,6 +293,7 @@ describe("PackageService tests", () => {
 
                 await org1PkgService.createPackage(
                     privateTestFailPackageId,
+                    "Org2MSP",
                     packageDetails,
                     pii,
                     privateTestFailSalt,
@@ -257,6 +318,7 @@ describe("PackageService tests", () => {
 
                 await org1PkgService.createPackage(
                     deleteTestPackageId,
+                    "Org2MSP",
                     packageDetails,
                     pii,
                     deleteTestSalt,
@@ -286,21 +348,29 @@ describe("PackageService tests", () => {
 
                 await org1PkgService.createPackage(
                     proposeTestPackageId,
+                    "Org2MSP",
                     packageDetails,
                     pii,
                     proposeTestSalt,
                     true,
                 )
 
-                const terms = {
-                    id: randomUUID(),
+                const termsId = randomUUID()
+                const transferTerms = {
+                    externalPackageId: proposeTestPackageId,
+                    fromMSP: "Org1MSP",
+                    toMSP: "Org2MSP",
+                    expiryISO: new Date(
+                        Date.now() + 24 * 60 * 60 * 1000,
+                    ).toISOString(),
                     price: 100,
+                    salt: proposeTestSalt,
                 }
+
                 const response = await org1PkgService.proposeTransfer(
                     proposeTestPackageId,
-                    "Org2MSP",
-                    terms,
-                    new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // expiryISO
+                    termsId,
+                    transferTerms,
                 )
 
                 expect(response).toBeDefined()
@@ -308,6 +378,13 @@ describe("PackageService tests", () => {
                 expect(response.status).toBe("Succeeded")
                 expect(response.id).toMatch(/^[a-f0-9-]+$/) //UUID check
                 expect(response.namespace).toBe(FF_NAMESPACE)
+
+                await org1PkgService.updateStatusAfterPropose(
+                    proposeTestPackageId,
+                    termsId,
+                    "Org2MSP",
+                    transferTerms.expiryISO,
+                )
 
                 const pkg =
                     await org1PkgService.readBlockchainPackage(
@@ -327,31 +404,42 @@ describe("PackageService tests", () => {
 
                 await org1PkgService.createPackage(
                     acceptTestPackageId,
+                    "Org2MSP",
                     packageDetails,
                     pii,
                     acceptTestSalt,
                     true,
                 )
 
-                const terms = {
-                    id: randomUUID(),
+                const termsId = randomUUID()
+                const transferTerms = {
+                    externalPackageId: acceptTestPackageId,
+                    fromMSP: "Org1MSP",
+                    toMSP: "Org2MSP",
+                    expiryISO: new Date(
+                        Date.now() + 24 * 60 * 60 * 1000,
+                    ).toISOString(),
                     price: 100,
+                    salt: acceptTestSalt,
                 }
+
                 await org1PkgService.proposeTransfer(
                     acceptTestPackageId,
-                    "Org2MSP",
-                    terms,
-                    new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // expiryISO
+                    termsId,
+                    transferTerms,
                 )
 
-                const privateTransferTerms = {
-                    price: 100,
-                }
+                await org1PkgService.updateStatusAfterPropose(
+                    acceptTestPackageId,
+                    termsId,
+                    "Org2MSP",
+                    transferTerms.expiryISO,
+                )
 
                 const response = await org2PkgService.acceptTransfer(
                     acceptTestPackageId,
-                    terms.id,
-                    privateTransferTerms,
+                    termsId,
+                    transferTerms,
                 )
 
                 expect(response).toBeDefined()
@@ -359,6 +447,11 @@ describe("PackageService tests", () => {
                 expect(response.status).toBe("Succeeded")
                 expect(response.id).toMatch(/^[a-f0-9-]+$/)
                 expect(response.namespace).toBe(FF_NAMESPACE)
+
+                await org2PkgService.updateStatusAfterAccept(
+                    acceptTestPackageId,
+                    termsId,
+                )
 
                 const pkg =
                     await org2PkgService.readBlockchainPackage(
@@ -379,31 +472,47 @@ describe("PackageService tests", () => {
 
                 await org1PkgService.createPackage(
                     executeTestPackageId,
+                    "Org2MSP",
                     packageDetails,
                     pii,
                     executeTestSalt,
                     true,
                 )
 
-                const terms = {
-                    id: randomUUID(),
+                const termsId = randomUUID()
+                const transferTerms = {
+                    externalPackageId: executeTestPackageId,
+                    fromMSP: "Org1MSP",
+                    toMSP: "Org2MSP",
+                    expiryISO: new Date(
+                        Date.now() + 24 * 60 * 60 * 1000,
+                    ).toISOString(),
                     price: 100,
+                    salt: executeTestSalt,
                 }
+
                 await org1PkgService.proposeTransfer(
                     executeTestPackageId,
-                    "Org2MSP",
-                    terms,
-                    new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // expiryISO
+                    termsId,
+                    transferTerms,
                 )
 
-                const privateTransferTerms = {
-                    price: 100,
-                }
+                await org1PkgService.updateStatusAfterPropose(
+                    executeTestPackageId,
+                    termsId,
+                    "Org2MSP",
+                    transferTerms.expiryISO,
+                )
 
                 await org2PkgService.acceptTransfer(
                     executeTestPackageId,
-                    terms.id,
-                    privateTransferTerms,
+                    termsId,
+                    transferTerms,
+                )
+
+                await org2PkgService.updateStatusAfterAccept(
+                    executeTestPackageId,
+                    termsId,
                 )
 
                 const storeObject = {
@@ -414,7 +523,8 @@ describe("PackageService tests", () => {
 
                 const response = await org1PkgService.executeTransfer(
                     executeTestPackageId,
-                    terms.id,
+                    termsId,
+                    "Org2MSP",
                     storeObject,
                 )
 
@@ -429,6 +539,93 @@ describe("PackageService tests", () => {
                         executeTestPackageId,
                     )
                 expect(pkg.ownerOrgMSP).toBe("Org2MSP")
+            },
+            BLOCKCHAIN_TIMEOUT,
+        )
+    })
+    describe("transferToPM3", () => {
+        it(
+            "should transfer a delivered package to PM3 successfully",
+            async () => {
+                const pm3TestPackageId = randomUUID()
+                const pm3TestSalt = randomBytes(32).toString("hex")
+
+                await org1PkgService.createPackage(
+                    pm3TestPackageId,
+                    "Org2MSP",
+                    packageDetails,
+                    pii,
+                    pm3TestSalt,
+                    true,
+                )
+
+                const termsId = randomUUID()
+                const transferTerms = {
+                    externalPackageId: pm3TestPackageId,
+                    fromMSP: "Org1MSP",
+                    toMSP: "Org2MSP",
+                    expiryISO: new Date(
+                        Date.now() + 24 * 60 * 60 * 1000,
+                    ).toISOString(),
+                    price: 100,
+                    salt: pm3TestSalt,
+                }
+
+                await org1PkgService.proposeTransfer(
+                    pm3TestPackageId,
+                    termsId,
+                    transferTerms,
+                )
+
+                await org1PkgService.updateStatusAfterPropose(
+                    pm3TestPackageId,
+                    termsId,
+                    "Org2MSP",
+                    transferTerms.expiryISO,
+                )
+
+                await org2PkgService.acceptTransfer(
+                    pm3TestPackageId,
+                    termsId,
+                    transferTerms,
+                )
+
+                await org2PkgService.updateStatusAfterAccept(
+                    pm3TestPackageId,
+                    termsId,
+                )
+
+                const storeObject = {
+                    salt: pm3TestSalt,
+                    pii: pii,
+                    packageDetails: packageDetails,
+                }
+
+                await org1PkgService.executeTransfer(
+                    pm3TestPackageId,
+                    termsId,
+                    "Org2MSP",
+                    storeObject,
+                )
+
+                const pkgBeforeTransfer =
+                    await org2PkgService.readBlockchainPackage(pm3TestPackageId)
+                expect(pkgBeforeTransfer.status).toBe(Status.DELIVERED)
+                expect(pkgBeforeTransfer.ownerOrgMSP).toBe("Org2MSP")
+
+                const response =
+                    await org2PkgService.transferToPM3(pm3TestPackageId)
+
+                expect(response).toBeDefined()
+                expect(response.error).toBeUndefined()
+                expect(response.status).toBe("Succeeded")
+                expect(response.id).toMatch(/^[a-f0-9-]+$/)
+                expect(response.namespace).toBe(FF_NAMESPACE)
+
+                const pkgAfterTransfer =
+                    await org2PkgService.readBlockchainPackage(pm3TestPackageId)
+                expect(pkgAfterTransfer).toBeDefined()
+                expect(pkgAfterTransfer.externalId).toBe(pm3TestPackageId)
             },
             BLOCKCHAIN_TIMEOUT,
         )

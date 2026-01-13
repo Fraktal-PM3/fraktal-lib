@@ -38,8 +38,9 @@ export const PackageDetailsSchema2020 = {
             additionalProperties: false,
         },
         Size: {
-            type: "object",dISO: { type: "string" },
-        expiryISO: { type: ["string", "null"] },
+            type: "object",
+            dISO: { type: "string" },
+            expiryISO: { type: ["string", "null"] },
             properties: {
                 width: { type: "number" },
                 height: { type: "number" },
@@ -53,12 +54,14 @@ export const PackageDetailsSchema2020 = {
             enum: ["high", "medium", "low", "none"],
         },
         Price: {
-            type: "number"
-        }
+            type: "number",
+        },
     },
 }
 
-export const packageDetailsDatatypePayload = (namespace = "default"): FireFlyDatatypeRequest => ({
+export const packageDetailsDatatypePayload = (
+    namespace = "default",
+): FireFlyDatatypeRequest => ({
     name: PACKAGE_DETAILS_DT_NAME,
     version: PACKAGE_DETAILS_DT_VERSION,
     validator: "json",
@@ -81,20 +84,15 @@ export const TransferOfferSchema2020 = {
         fromMSP: { type: "string" },
         toMSP: { type: "string" },
         price: { type: "number" },
-        createdISO: { type: "string" },
-        expiryISO: { type: ["string", "null"] },
+        expiryISO: { type: "string" },
     },
-    required: [
-        "externalPackageId",
-        "fromMSP",
-        "toMSP",
-        "price",
-        "createdISO",
-    ],
+    required: ["externalPackageId", "fromMSP", "toMSP", "price", "expiryISO"],
     additionalProperties: false,
 }
 
-export const transferOfferDatatypePayload = (namespace = "default"): FireFlyDatatypeRequest => ({
+export const transferOfferDatatypePayload = (
+    namespace = "default",
+): FireFlyDatatypeRequest => ({
     name: TRANSFER_OFFER_DT_NAME,
     version: TRANSFER_OFFER_DT_VERSION,
     validator: "json",
@@ -103,5 +101,3 @@ export const transferOfferDatatypePayload = (namespace = "default"): FireFlyData
         $id: `ff://${namespace}/${TRANSFER_OFFER_DT_NAME}/${TRANSFER_OFFER_DT_VERSION}`,
     },
 })
-
-

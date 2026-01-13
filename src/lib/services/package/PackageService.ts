@@ -17,7 +17,6 @@ import {
 } from "../../datatypes/package"
 import contractInterface from "./interface.json"
 import {
-    AcceptTransferEvent,
     BlockchainPackage,
     CreatePackageEvent,
     DeletePackageEvent,
@@ -25,12 +24,17 @@ import {
     PackageDetailsWithId,
     PackageEventHandler,
     PackagePII,
-    ProposeTransferEvent,
+    Proposal,
     Status,
     StatusUpdatedEvent,
+    ProposeTransferEvent,
+    AcceptTransferEvent,
+    StatusUpdatedAfterProposeEvent,
+    StatusUpdatedAfterAcceptEvent,
     StoreObject,
     TransferExecutedEvent,
     TransferToPM3Event,
+    TransferTerms,
     FireFlyDatatypeMessage,
     BlockchainEventDelivery,
 } from "./types.common"
@@ -45,6 +49,8 @@ type EventTypeMap = {
     DeletePackage: DeletePackageEvent
     ProposeTransfer: ProposeTransferEvent
     AcceptTransfer: AcceptTransferEvent
+    StatusUpdatedAfterPropose: StatusUpdatedAfterProposeEvent
+    StatusUpdatedAfterAccept: StatusUpdatedAfterAcceptEvent
     TransferExecuted: TransferExecutedEvent
     TransferToPM3: TransferToPM3Event
 }
@@ -197,8 +203,8 @@ export class PackageService {
                 handlers.forEach((handler) => {
                     handler({
                         output: blockchainEvent.output,
-                        timestamp: blockchainEvent.timestamp,
-                        txid: blockchainEvent.tx.blockchainId,
+                        timestamp: blockchainEvent.info.timestamp,
+                        txid: blockchainEvent.info.transactionId,
                         header: {
                             key: "",
                             author: "",
@@ -258,9 +264,9 @@ export class PackageService {
      *   console.log(e.output.externalId, e.output.status)
      * })
      *
-     * // Type-safe listener for ProposeTransfer event
-     * await svc.onEvent("ProposeTransfer", (e) => {
-     *   console.log(e.output.termsId, e.output.terms.fromMSP)
+     * // Type-safe listener for StatusUpdatedAfterPropose event
+     * await svc.onEvent("StatusUpdatedAfterPropose", (e) => {
+     *   console.log(e.output.externalId, e.output.termsId, e.output.status)
      * })
      * ```
      */
@@ -298,6 +304,24 @@ export class PackageService {
         eventName: "AcceptTransfer",
         handler: (
             event: BlockchainEventDelivery & { output: AcceptTransferEvent },
+        ) => void,
+    ): Promise<void>
+
+    public onEvent(
+        eventName: "StatusUpdatedAfterPropose",
+        handler: (
+            event: BlockchainEventDelivery & {
+                output: StatusUpdatedAfterProposeEvent
+            },
+        ) => void,
+    ): Promise<void>
+
+    public onEvent(
+        eventName: "StatusUpdatedAfterAccept",
+        handler: (
+            event: BlockchainEventDelivery & {
+                output: StatusUpdatedAfterAcceptEvent
+            },
         ) => void,
     ): Promise<void>
 
@@ -698,44 +722,43 @@ export class PackageService {
 
     /**
      * Proposes a transfer to another organization.
+     * Stores transfer terms in the proposer's implicit private data collection.
      *
      * @param externalId Package external ID.
-     * @param toMSP MSP ID of the recipient organization.
-     * @param terms Proposed terms `{ id, price, salt }`. The `price` and `salt` are sent privately via `transientMap`.
-     * @param expiryISO Optional ISO-8601 expiry time for the offer.
+     * @param termsId Unique identifier for this transfer proposal (must be a UUID).
+     * @param transferTerms Full transfer terms including price and all details.
      * @returns FireFlyContractInvokeResponse.
      *
      * @example
      * ```ts
-     * const salt = crypto.randomBytes(16).toString("hex")
-     * await svc.proposeTransfer("pkg-001", "Org2MSP", { id: "t-123", price: 42.5, salt });
+     * const termsId = crypto.randomUUID()
+     * const transferTerms = {
+     *   externalPackageId: "pkg-001",
+     *   fromMSP: "Org1MSP",
+     *   toMSP: "Org2MSP",
+     *   createdISO: new Date().toISOString(),
+     *   expiryISO: null,
+     *   price: 42.5
+     * }
+     * await svc.proposeTransfer("pkg-001", termsId, transferTerms)
      * ```
      */
     public proposeTransfer = async (
         externalId: string,
-        toMSP: string,
-        terms: { price: number; id: string; salt: string },
-        expiryISO?: string,
+        termsId: string,
+        transferTerms: TransferTerms,
     ): Promise<FireFlyContractInvokeResponse> => {
-        const createdISO = new Date().toISOString()
-
         const res = await this.ff.invokeContractAPI(
             contractInterface.name,
             "ProposeTransfer",
             {
                 input: {
                     externalId,
-                    termsId: terms.id,
-                    toMSP,
-                    createdISO,
-                    expiryISO,
+                    termsId: termsId,
                 },
                 options: {
                     transientMap: {
-                        privateTransferTerms: JSON.stringify({
-                            salt: terms.salt,
-                            price: terms.price,
-                        }),
+                        transferTerms: JSON.stringify(transferTerms),
                     },
                 },
             },
@@ -746,18 +769,26 @@ export class PackageService {
     }
 
     /**
-     * Reads the public transfer terms for a given terms ID.
-     * @param termsId Transfer terms identifier.
-     * @returns The transfer terms as a JSON string.
+     * Updates the package status to PROPOSED after proposing a transfer.
+     * This should be called after ProposeTransfer completes successfully.
+     * Creates a proposal record on-chain for tracking.
+     *
+     * @param externalId Package external ID.
+     * @param termsId Transfer proposal identifier (UUID).
+     * @param toMSP MSP ID of the recipient organization.
+     * @returns FireFly invocation response.
      */
-    public readTransferTerms = async (
+    public updateStatusAfterPropose = async (
+        externalId: string,
         termsId: string,
-    ): Promise<FireFlyContractQueryResponse> => {
-        const res = await this.ff.queryContractAPI(
+        toMSP: string,
+        expiryISO: string,
+    ): Promise<FireFlyContractInvokeResponse> => {
+        const res = await this.ff.invokeContractAPI(
             contractInterface.name,
-            "ReadTransferTerms",
+            "UpdateStatusAfterPropose",
             {
-                input: { termsId },
+                input: { externalId, termsId: termsId, toMSP, expiryISO },
             },
             { confirm: true, publish: true },
         )
@@ -766,19 +797,23 @@ export class PackageService {
     }
 
     /**
-     * Reads the private transfer terms for a given terms ID.
-     * Only the recipient organization (toMSP) can read their private terms.
-     * @param termsId Transfer terms identifier.
-     * @returns The private transfer terms as a JSON string.
+     * Updates the package status to READY_FOR_PICKUP after accepting a transfer.
+     * This should be called after AcceptTransfer completes successfully.
+     * Updates the proposal status to "accepted" on-chain.
+     *
+     * @param externalId Package external ID.
+     * @param termsId Transfer proposal identifier (UUID).
+     * @returns FireFly invocation response.
      */
-    public readPrivateTransferTerms = async (
+    public updateStatusAfterAccept = async (
+        externalId: string,
         termsId: string,
-    ): Promise<FireFlyContractQueryResponse> => {
-        const res = await this.ff.queryContractAPI(
+    ): Promise<FireFlyContractInvokeResponse> => {
+        const res = await this.ff.invokeContractAPI(
             contractInterface.name,
-            "ReadPrivateTransferTerms",
+            "UpdateStatusAfterAccept",
             {
-                input: { termsId },
+                input: { externalId, termsId: termsId },
             },
             { confirm: true, publish: true },
         )
@@ -788,30 +823,27 @@ export class PackageService {
 
     /**
      * Accepts a previously proposed transfer.
-     *
-     * The chaincode internally verifies the package details and PII hash
-     * by calling CheckPackageDetailsAndPIIHash. The caller must provide
-     * the private transfer terms via transient map for verification.
+     * Stores transfer terms in the acceptor's implicit private data collection.
+     * The acceptor must provide the complete transfer terms for verification.
      *
      * @param externalId Package external ID.
-     * @param termsId Identifier of the terms being accepted.
-     * @param privateTransferTerms Private fields (e.g., `salt`, `price`) sent via `transientMap`.
+     * @param termsId Identifier of the terms being accepted (must be a UUID).
+     * @param transferTerms Complete transfer terms including all fields.
      * @returns FireFly invocation response.
      */
     public acceptTransfer = async (
         externalId: string,
         termsId: string,
-        privateTransferTerms: { salt: string; price: number },
-    ) => {
+        transferTerms: TransferTerms,
+    ): Promise<FireFlyContractInvokeResponse> => {
         const res = await this.ff.invokeContractAPI(
             contractInterface.name,
             "AcceptTransfer",
             {
-                input: { externalId, termsId },
+                input: { externalId, termsId: termsId },
                 options: {
                     transientMap: {
-                        privateTransferTerms:
-                            JSON.stringify(privateTransferTerms),
+                        transferTerms: JSON.stringify(transferTerms),
                     },
                 },
             },
@@ -823,23 +855,27 @@ export class PackageService {
 
     /**
      * Executes a confirmed transfer (finalization step).
+     * Transfers ownership of the package from the current owner to the recipient.
+     * Moves the private package data to the recipient's collection.
      *
      * @param externalId Package external ID.
-     * @param termsId Transfer terms ID.
-     * @param storeObject The same data passed in CreatePackage, including salt, PII, and packageDetails. For integrity verification
-     * and transfer of data to the new owner.
+     * @param termsId Transfer terms ID (must be a UUID).
+     * @param storeObject The same data passed in CreatePackage, including salt, PII, and packageDetails.
+     *                    Used for integrity verification and transfer of data to the new owner.
+     * @param transferTerms Complete transfer terms including all fields.
      * @returns FireFly invocation response.
      */
     public executeTransfer = async (
         externalId: string,
         termsId: string,
+        toMSP: string,
         storeObject: StoreObject,
     ): Promise<FireFlyContractInvokeResponse> => {
         const res = await this.ff.invokeContractAPI(
             contractInterface.name,
             "ExecuteTransfer",
             {
-                input: { externalId, termsId },
+                input: { externalId, termsId: termsId, toMSP },
                 options: {
                     transientMap: {
                         storeObject: JSON.stringify(storeObject),
@@ -869,5 +905,97 @@ export class PackageService {
             { confirm: true, publish: true },
         )
         return res
+    }
+
+    /**
+     * Reads private transfer terms from the caller's implicit collection.
+     * Supports partial queries by providing empty strings for either parameter.
+     *
+     * @param externalId Package external ID (can be empty string for partial query by termsId only).
+     * @param termsId Transfer proposal identifier (can be empty string for partial query by externalId only).
+     * @returns Array of TransferTerms if partial query (one param empty), single TransferTerms if both params provided.
+     *
+     * @example
+     * ```ts
+     * // Get all terms for a package
+     * const termsArray = await svc.readPrivateTransferTerms("uuid-123", "")
+     *
+     * // Get specific terms
+     * const terms = await svc.readPrivateTransferTerms("uuid-123", "uuid-456")
+     * ```
+     */
+    public readPrivateTransferTerms = async (
+        externalId: string,
+        termsId: string,
+    ): Promise<TransferTerms | TransferTerms[]> => {
+        const res = await this.ff.queryContractAPI(
+            contractInterface.name,
+            "ReadPrivateTransferTerms",
+            {
+                input: { externalId, termsId },
+            },
+            { confirm: true, publish: true },
+        )
+
+        // Parse the response - chaincode returns JSON string
+        if (typeof res === "string") {
+            const parsed = JSON.parse(res)
+            // If partial query (one param empty), we get an array of JSON strings
+            if (Array.isArray(parsed)) {
+                return parsed.map((item) =>
+                    typeof item === "string" ? JSON.parse(item) : item,
+                )
+            }
+            // Otherwise we get a single object
+            return parsed
+        }
+
+        return res as TransferTerms
+    }
+
+    /**
+     * Reads public proposal data from the blockchain.
+     * Supports partial queries by providing empty strings for either parameter.
+     *
+     * @param externalId Package external ID (can be empty string for partial query by termsId only).
+     * @param termsId Transfer proposal identifier (can be empty string for partial query by externalId only).
+     * @returns Array of Proposal if partial query (one param empty), single Proposal if both params provided.
+     *
+     * @example
+     * ```ts
+     * // Get all proposals for a package
+     * const proposalsArray = await svc.readPublicProposal("uuid-123", "")
+     *
+     * // Get specific proposal
+     * const proposal = await svc.readPublicProposal("uuid-123", "uuid-456")
+     * ```
+     */
+    public readPublicProposal = async (
+        externalId: string,
+        termsId: string,
+    ): Promise<Proposal | Proposal[]> => {
+        const res = await this.ff.queryContractAPI(
+            contractInterface.name,
+            "ReadPublicProposal",
+            {
+                input: { externalId, termsId },
+            },
+            { confirm: true, publish: true },
+        )
+
+        // Parse the response - chaincode returns JSON string
+        if (typeof res === "string") {
+            const parsed = JSON.parse(res)
+            // If partial query (one param empty), we get an array of JSON strings
+            if (Array.isArray(parsed)) {
+                return parsed.map((item) =>
+                    typeof item === "string" ? JSON.parse(item) : item,
+                )
+            }
+            // Otherwise we get a single object
+            return parsed
+        }
+
+        return res as Proposal
     }
 }

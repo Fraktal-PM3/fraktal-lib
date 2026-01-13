@@ -100,11 +100,8 @@ export declare const TransferOfferSchema2020: {
         price: {
             type: string;
         };
-        createdISO: {
-            type: string;
-        };
         expiryISO: {
-            type: string[];
+            type: string;
         };
     };
     required: string[];

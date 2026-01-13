@@ -7,7 +7,7 @@
         {
             "name": "CreatePackage",
             "pathname": "",
-            "description": "Create a package. Transient keys: 'pii' (JSON of PackagePII), 'packageDetails' (JSON of PackageDetails).",
+            "description": "Create a package. Transient keys: 'pii' (JSON of PackagePII), 'packageDetails' (JSON of PackageDetails), 'salt' (string).",
             "params": [
                 {
                     "name": "externalId",
@@ -52,6 +52,60 @@
             "params": [
                 {
                     "name": "externalId",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "returns": [
+                {
+                    "name": "",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "ReadPrivateTransferTerms",
+            "pathname": "",
+            "description": "Read private transfer terms from the caller's implicit collection. Supports partial queries - provide empty string for either parameter to query by the other.",
+            "params": [
+                {
+                    "name": "externalId",
+                    "schema": {
+                        "type": "string"
+                    }
+                },
+                {
+                    "name": "termsId",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "returns": [
+                {
+                    "name": "",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "ReadPublicProposal",
+            "pathname": "",
+            "description": "Read public proposal data from the blockchain. Supports partial queries - provide empty string for either parameter to query by the other.",
+            "params": [
+                {
+                    "name": "externalId",
+                    "schema": {
+                        "type": "string"
+                    }
+                },
+                {
+                    "name": "termsId",
                     "schema": {
                         "type": "string"
                     }
@@ -134,7 +188,27 @@
         {
             "name": "ProposeTransfer",
             "pathname": "",
-            "description": "Propose a transfer of a package to another org. Only current owner can propose. Transient key required: 'privateTransferTerms' (JSON).",
+            "description": "Propose a transfer of a package to another org. Only current owner can propose. Transient key required: 'transferTerms' (JSON).",
+            "params": [
+                {
+                    "name": "externalId",
+                    "schema": {
+                        "type": "string"
+                    }
+                },
+                {
+                    "name": "termsId",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "returns": []
+        },
+        {
+            "name": "UpdateStatusAfterPropose",
+            "pathname": "",
+            "description": "Update package status to PROPOSED after proposing a transfer. Creates a proposal record on-chain.",
             "params": [
                 {
                     "name": "externalId",
@@ -155,16 +229,29 @@
                     }
                 },
                 {
-                    "name": "createdISO",
+                    "name": "expiryISO",
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "returns": []
+        },
+        {
+            "name": "UpdateStatusAfterAccept",
+            "pathname": "",
+            "description": "Update package status to READY_FOR_PICKUP after accepting a transfer. Updates proposal status to 'accepted'.",
+            "params": [
+                {
+                    "name": "externalId",
                     "schema": {
                         "type": "string"
                     }
                 },
                 {
-                    "name": "expiryISO",
+                    "name": "termsId",
                     "schema": {
-                        "type": "string",
-                        "nullable": true
+                        "type": "string"
                     }
                 }
             ],
@@ -198,51 +285,9 @@
             ]
         },
         {
-            "name": "ReadTransferTerms",
-            "pathname": "",
-            "description": "Read public transfer terms by termsId.",
-            "params": [
-                {
-                    "name": "termsId",
-                    "schema": {
-                        "type": "string"
-                    }
-                }
-            ],
-            "returns": [
-                {
-                    "name": "",
-                    "schema": {
-                        "type": "string"
-                    }
-                }
-            ]
-        },
-        {
-            "name": "ReadPrivateTransferTerms",
-            "pathname": "",
-            "description": "Read private transfer terms by termsId. Only the recipient org (toMSP) may read from its implicit collection.",
-            "params": [
-                {
-                    "name": "termsId",
-                    "schema": {
-                        "type": "string"
-                    }
-                }
-            ],
-            "returns": [
-                {
-                    "name": "",
-                    "schema": {
-                        "type": "string"
-                    }
-                }
-            ]
-        },
-        {
             "name": "AcceptTransfer",
             "pathname": "",
-            "description": "Accept a transfer for a package. Only the recipient org (toMSP) may accept. Requires matching 'privateTransferTerms' in transient, and a verified packageDetailsAndPIIHash.",
+            "description": "Accept a transfer for a package. Only the recipient org (toMSP) may accept. Requires matching 'transferTerms' in transient.",
             "params": [
                 {
                     "name": "externalId",
@@ -262,7 +307,7 @@
         {
             "name": "ExecuteTransfer",
             "pathname": "",
-            "description": "Execute the transfer of ownership for a package. Only the current owner org may execute after acceptance by the recipient org.",
+            "description": "Execute the transfer of ownership for a package. Only the current owner org may execute after acceptance by the recipient org. Transient keys: 'transferTerms' (JSON), 'storeObject' (JSON).",
             "params": [
                 {
                     "name": "externalId",
@@ -272,6 +317,12 @@
                 },
                 {
                     "name": "termsId",
+                    "schema": {
+                        "type": "string"
+                    }
+                },
+                {
+                    "name": "toMSP",
                     "schema": {
                         "type": "string"
                     }
@@ -369,7 +420,52 @@
             "details": {
                 "type": "object",
                 "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "caller": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        {
+            "name": "ProposeTransfer",
+            "description": "Emitted when a transfer is proposed",
+            "details": {
+                "type": "object",
+                "properties": {
                     "externalId": {
+                        "type": "string"
+                    },
+                    "termsId": {
+                        "type": "string"
+                    },
+                    "toMSP": {
+                        "type": "string"
+                    },
+                    "caller": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        {
+            "name": "StatusUpdatedAfterPropose",
+            "description": "Emitted when package status is updated to PROPOSED after proposing a transfer",
+            "details": {
+                "type": "object",
+                "properties": {
+                    "externalId": {
+                        "type": "string"
+                    },
+                    "termsId": {
+                        "type": "string"
+                    },
+                    "toMSP": {
+                        "type": "string"
+                    },
+                    "expiryISO": {
                         "type": "string"
                     },
                     "status": {
@@ -392,42 +488,6 @@
             }
         },
         {
-            "name": "ProposeTransfer",
-            "description": "Emitted when a transfer proposal is created",
-            "details": {
-                "type": "object",
-                "properties": {
-                    "externalId": {
-                        "type": "string"
-                    },
-                    "termsId": {
-                        "type": "string"
-                    },
-                    "terms": {
-                        "extenalPackageId": {
-                            "type": "string"
-                        },
-                        "fromMSP": {
-                            "type": "string"
-                        },
-                        "expiryISO": {
-                            "type": "string",
-                            "nullable": true
-                        },
-                        "createdISO": {
-                            "type": "string"
-                        },
-                        "toMSP": {
-                            "type": "string"
-                        }
-                    },
-                    "caller": {
-                        "type": "string"
-                    }
-                }
-            }
-        },
-        {
             "name": "AcceptTransfer",
             "description": "Emitted when a transfer is accepted",
             "details": {
@@ -438,6 +498,37 @@
                     },
                     "termsId": {
                         "type": "string"
+                    },
+                    "caller": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        {
+            "name": "StatusUpdatedAfterAccept",
+            "description": "Emitted when package status is updated to READY_FOR_PICKUP after accepting a transfer",
+            "details": {
+                "type": "object",
+                "properties": {
+                    "externalId": {
+                        "type": "string"
+                    },
+                    "termsId": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "pending",
+                            "ready_for_pickup",
+                            "picked_up",
+                            "in_transit",
+                            "delivered",
+                            "succeeded",
+                            "failed",
+                            "proposed"
+                        ]
                     },
                     "caller": {
                         "type": "string"
